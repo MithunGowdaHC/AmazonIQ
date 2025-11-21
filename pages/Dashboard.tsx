@@ -329,7 +329,9 @@ export const Dashboard: React.FC = () => {
                             <table className="w-full text-left text-sm text-slate-400">
                                 <thead className="bg-slate-950/50 text-[10px] uppercase font-bold text-slate-500 border-y border-slate-800">
                                     <tr>
+                                        
                                         <th className="px-6 py-4 w-64 tracking-wider">Product Details</th>
+                                        <th className='px-6 py-4 text-right tracking-wider'>Analyze</th>
                                         <th className="px-4 py-4 text-right tracking-wider">Spends</th>
                                         <th className="px-4 py-4 text-right text-indigo-400 tracking-wider">Sales</th>
                                         <th className="px-4 py-4 text-right tracking-wider">Orders</th>
@@ -355,6 +357,15 @@ export const Dashboard: React.FC = () => {
                                                     <span className="text-[10px] text-slate-500 font-mono mt-0.5">{row.asin}</span>
                                                 </Link>
                                             </td>
+                                            <td className="px-4 py-3.5 text-right">
+                                                <Link 
+                                                    to={`/asin/${row.asin}`} 
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600 hover:text-white text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all"
+                                                >
+                                                    Analyze
+                                                    <ArrowRight className="w-3 h-3" />
+                                                </Link>
+                                            </td>
                                             <td className="px-4 py-3.5 text-right font-medium text-slate-300">₹{Math.round(row.spend).toLocaleString()}</td>
                                             <td className="px-4 py-3.5 text-right font-bold text-indigo-400">₹{Math.round(row.totalSales).toLocaleString()}</td>
                                             <td className="px-4 py-3.5 text-right">{row.totalOrders}</td>
@@ -372,15 +383,7 @@ export const Dashboard: React.FC = () => {
                                             <td className="px-4 py-3.5 text-right font-medium text-slate-300">{row.glanceViews?.toLocaleString() || 0}</td>
                                             <td className="px-4 py-3.5 text-right text-slate-500">{row.paidGlanceViews?.toLocaleString() || 0}</td>
                                             <td className="px-4 py-3.5 text-right text-slate-500">{row.organicGlanceViews?.toLocaleString() || 0}</td>
-                                            <td className="px-4 py-3.5 text-right">
-                                                <Link 
-                                                    to={`/asin/${row.asin}`} 
-                                                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600 hover:text-white text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all"
-                                                >
-                                                    Analyze
-                                                    <ArrowRight className="w-3 h-3" />
-                                                </Link>
-                                            </td>
+                                            
                                         </tr>
                                     ))}
                                 </tbody>

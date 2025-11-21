@@ -166,7 +166,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className="flex items-center gap-1 opacity-50">
                         <span>Made with</span>
                         <Heart className="w-3 h-3 text-rose-500 fill-rose-500" />
-                        <span>by Intelligence Team</span>
+                        <span>by MG</span>
                     </div>
                 </div>
             </footer>

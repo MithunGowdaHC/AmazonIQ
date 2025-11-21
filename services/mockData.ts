@@ -6,7 +6,6 @@ export const ACCOUNTS: Account[] = [
   { id: 'Samsonite India', name: 'Samsonite India' },
   { id: 'Continental Coffee', name: 'Continental Coffee' },
   { id: 'Tata Retail', name: 'Tata Retail' },
-  { id: 'Zeno Home', name: 'Zeno Home' },
 ];
 
 export const MOCK_USER = {

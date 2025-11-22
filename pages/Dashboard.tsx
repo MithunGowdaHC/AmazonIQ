@@ -5,7 +5,8 @@ import { getAsinSummaries } from '../services/dataService';
 import { AsinSummary } from '../types';
 import { Card } from '../components/ui/Card';
 import { GoogleDateRangePicker } from '../components/ui/GoogleDateRangePicker';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { subDays, format } from 'date-fns';
 import { 
     ArrowRight,
@@ -136,7 +137,7 @@ interface SortConfig {
 
 export const Dashboard: React.FC = () => {
     const { selectedAccount } = useAuth();
-    const location = useLocation();
+    const router = useRouter();
     const [data, setData] = useState<AsinSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
@@ -149,14 +150,8 @@ export const Dashboard: React.FC = () => {
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'overallSales', direction: 'desc' });
 
     // Handle incoming date filters
-    useEffect(() => {
-        const state = location.state as { forceDate?: { start: string, end: string } };
-        if (state?.forceDate) {
-            setStartDate(state.forceDate.start);
-            setEndDate(state.forceDate.end);
-            window.history.replaceState({}, document.title);
-        }
-    }, [location]);
+    // Note: React Router `location.state` logic removed for Next.js migration.
+    // If you need to pass forced dates between pages, use query params.
 
     useEffect(() => {
         if (selectedAccount) {
@@ -369,7 +364,7 @@ export const Dashboard: React.FC = () => {
                         <Card title="Top 5 Movers" subtitle="By Revenue">
                             <div className="space-y-1 mt-2">
                                 {[...data].sort((a,b) => b.overallSales - a.overallSales).slice(0, 5).map((asin, idx) => (
-                                    <Link to={`/analytics/${asin.asin}`} key={asin.asin} className="flex items-center gap-3 py-3 px-3 hover:bg-slate-800/50 rounded-lg group cursor-pointer transition-all border border-transparent hover:border-slate-700/50">
+                                    <Link href={`/analytics/${asin.asin}`} key={asin.asin} className="flex items-center gap-3 py-3 px-3 hover:bg-slate-800/50 rounded-lg group cursor-pointer transition-all border border-transparent hover:border-slate-700/50">
                                         <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] shrink-0 ${idx === 0 ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30' : 'bg-slate-800 text-slate-500'}`}>#{idx + 1}</div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-slate-200 truncate group-hover:text-indigo-400 transition-colors">{asin.itemName || asin.asin}</p>
@@ -445,14 +440,14 @@ export const Dashboard: React.FC = () => {
                                         return (
                                             <tr key={row.asin} className="hover:bg-slate-800/30 transition-colors group text-xs">
                                                 <td className="px-6 py-3.5">
-                                                    <Link to={`/analytics/${row.asin}`} className="flex flex-col group-hover:text-indigo-400 transition-colors">
+                                                    <Link href={`/analytics/${row.asin}`} className="flex flex-col group-hover:text-indigo-400 transition-colors">
                                                         <span className="font-semibold text-slate-300 truncate max-w-[200px]" title={row.itemName}>{row.itemName || row.asin}</span>
                                                         <span className="text-[10px] text-slate-500 font-mono mt-0.5">{row.asin}</span>
                                                     </Link>
                                                 </td>
                                                 <td className="px-4 py-3.5 text-center">
                                                     <Link 
-                                                        to={`/analytics/${row.asin}`} 
+                                                        href={`/analytics/${row.asin}`} 
                                                         className="flex items-center justify-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600 hover:text-white text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all w-full"
                                                     >
                                                         Analyze
@@ -488,3 +483,5 @@ export const Dashboard: React.FC = () => {
         </div>
     );
 };
+
+export default Dashboard;

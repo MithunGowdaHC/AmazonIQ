@@ -1,0 +1,1 @@
+(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[276],{3639:function(n,u,t){(window.__NEXT_P=window.__NEXT_P||[]).push(["/history",function(){return t(6631)}])},6631:function(n,u,t){"use strict";t.r(u);var _=t(3883);u.default=_.default}},function(n){n.O(0,[466,603,350,688,883,774,888,179],function(){return n(n.s=3639)}),_N_E=n.O()}]);

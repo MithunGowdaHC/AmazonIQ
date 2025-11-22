@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useAuth } from '../services/authContext';
 import { getAsinDetails, getDailyPerformance } from '../services/dataService';
 import { AsinSummary, DailyPerformance } from '../types';
@@ -30,9 +31,9 @@ const MetricPill = ({ label, value, colorClass = "text-slate-100" }: { label: st
 );
 
 export const AsinAnalytics: React.FC = () => {
-    const { asin } = useParams<{ asin: string }>();
+    const router = useRouter();
+    const asin = Array.isArray(router.query.asin) ? router.query.asin[0] : (router.query.asin as string | undefined);
     const { selectedAccount } = useAuth();
-    const navigate = useNavigate();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [summary, setSummary] = useState<AsinSummary | null>(null);
@@ -49,7 +50,7 @@ export const AsinAnalytics: React.FC = () => {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (searchTerm.trim()) {
-            navigate(`/analytics/${searchTerm.trim()}`);
+            router.push(`/analytics/${searchTerm.trim()}`);
         }
     };
 
@@ -78,7 +79,7 @@ export const AsinAnalytics: React.FC = () => {
     }, [selectedAccount, asin, startDate, endDate]);
 
     const handleBack = () => {
-        navigate('/analytics');
+        router.push('/analytics');
     };
 
     // --- STATE: EMPTY SEARCH ---
@@ -116,7 +117,7 @@ export const AsinAnalytics: React.FC = () => {
                         {['B08XYZ1234', 'B0SAM11111'].map(ex => (
                             <button 
                                 key={ex}
-                                onClick={() => navigate(`/analytics/${ex}`)}
+                                onClick={() => router.push(`/analytics/${ex}`)}
                                 className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 hover:border-indigo-500/50 hover:text-indigo-400 transition-all"
                             >
                                 Try {ex}
@@ -165,7 +166,7 @@ export const AsinAnalytics: React.FC = () => {
             <div className="flex flex-col gap-4 bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-sm">
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-[-8px] overflow-x-auto scrollbar-hide whitespace-nowrap">
-                    <Link to="/analytics" className="hover:text-indigo-400 flex items-center gap-1">
+                    <Link href="/analytics" className="hover:text-indigo-400 flex items-center gap-1">
                         <BarChart2 className="w-3 h-3" /> Analytics
                     </Link>
                     <ChevronRight className="w-3 h-3" />
@@ -192,7 +193,7 @@ export const AsinAnalytics: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full xl:w-auto">
                         <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
                         <Link 
-                            to={`/analytics/${asin}/pivot`}
+                            href={`/analytics/${asin}/pivot`}
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-indigo-900/30 h-[42px] whitespace-nowrap w-full sm:w-auto"
                         >
                             <Calendar className="w-4 h-4" />
@@ -382,3 +383,5 @@ export const AsinAnalytics: React.FC = () => {
         </div>
     );
 };
+
+export default AsinAnalytics;

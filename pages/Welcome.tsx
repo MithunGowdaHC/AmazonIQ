@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Hexagon, ArrowRight, BarChart3, ShieldCheck, Zap } from 'lucide-react';
 
 export const Welcome: React.FC = () => {
@@ -20,8 +20,8 @@ export const Welcome: React.FC = () => {
           <span className="font-bold text-xl tracking-tight text-slate-100">AV Retail Hive</span>
         </div>
         <div className="flex items-center gap-6">
-           <Link to="/dashboard" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Dashboard</Link>
-           <Link to="/history" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">History</Link>
+           <Link href="/dashboard" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Dashboard</Link>
+           <Link href="/history" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">History</Link>
         </div>
       </nav>
 
@@ -47,8 +47,8 @@ export const Welcome: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row gap-4">
             <Link 
-                to="/dashboard" 
-                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg transition-all shadow-xl shadow-indigo-900/40 flex items-center gap-2 group"
+              href="/dashboard" 
+              className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-lg transition-all shadow-xl shadow-indigo-900/40 flex items-center gap-2 group"
             >
                 Access Dashboard
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -86,3 +86,5 @@ export const Welcome: React.FC = () => {
     </div>
   );
 };
+
+export default Welcome;

@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../services/authContext';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { 
   LayoutDashboard, 
   LogOut, 
@@ -16,14 +17,15 @@ import {
 } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, selectedAccount, selectAccount, availableAccounts, isAccessDenied } = useAuth();
-  const location = useLocation();
+    const { user, selectedAccount, selectAccount, availableAccounts, isAccessDenied } = useAuth();
+    const router = useRouter();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
-      if (path === '/dashboard') return location.pathname === '/dashboard';
-      return location.pathname.startsWith(path);
+      const current = router.pathname;
+      if (path === '/dashboard') return current === '/dashboard';
+      return current.startsWith(path);
   };
 
   if (isAccessDenied) {
@@ -44,7 +46,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 z-40 md:translate-x-0 md:static md:flex-shrink-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 flex items-center justify-between border-b border-slate-800">
-             <Link to="/" className="flex items-center gap-3 group" onClick={() => setIsMobileMenuOpen(false)}>
+             <Link href="/" className="flex items-center gap-3 group" onClick={() => setIsMobileMenuOpen(false)}>
                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-all">
                     <Hexagon className="text-white w-5 h-5 fill-indigo-600" />
                 </div>
@@ -91,32 +93,32 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto scrollbar-hide">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-3 mt-2">Overview</p>
-          <Link 
-            to="/dashboard" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
-          >
+                                                <Link 
+                        href="/dashboard" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
+                    >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
-          </Link>
+                    </Link>
 
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-3 mt-6">Deep Dive</p>
-          <Link 
-            to="/analytics" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/analytics') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
-          >
+                    <Link 
+                        href="/analytics" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/analytics') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
+                    >
             <BarChart2 className="w-4 h-4" />
             ASIN Analytics
-          </Link>
-          <Link 
-            to="/history" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/history') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
-          >
+                    </Link>
+                    <Link 
+                        href="/history" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/history') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
+                    >
             <History className="w-4 h-4" />
             Account History
-          </Link>
+                    </Link>
         </nav>
 
         <div className="p-4 border-t border-slate-800/50">
@@ -147,9 +149,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <Menu className="w-5 h-5" />
                 </button>
                 <h1 className="text-lg md:text-xl font-semibold text-slate-100 tracking-tight truncate">
-                    {location.pathname === '/dashboard' ? 'Overview' : 
-                    location.pathname.startsWith('/analytics') ? 'ASIN Intelligence' : 
-                    location.pathname === '/history' ? 'Account Performance' : 'Retail Hive'}
+                    {router.pathname === '/dashboard' ? 'Overview' : 
+                    router.pathname.startsWith('/analytics') ? 'ASIN Intelligence' : 
+                    router.pathname === '/history' ? 'Account Performance' : 'Retail Hive'}
                 </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -177,9 +179,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <span className="hidden md:inline">All rights reserved.</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Link to="#" className="hover:text-indigo-400 transition-colors">Privacy</Link>
-                        <Link to="#" className="hover:text-indigo-400 transition-colors">Terms</Link>
-                        <Link to="#" className="hover:text-indigo-400 transition-colors">Support</Link>
+                        <Link href="#" className="hover:text-indigo-400 transition-colors">Privacy</Link>
+                        <Link href="#" className="hover:text-indigo-400 transition-colors">Terms</Link>
+                        <Link href="#" className="hover:text-indigo-400 transition-colors">Support</Link>
                     </div>
                     <div className="flex items-center gap-1 opacity-50">
                         <span>Made with</span>

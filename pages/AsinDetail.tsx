@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../services/authContext';
 import { getAsinDetails, getDailyPerformance } from '../services/dataService';
 import { AsinSummary, DailyPerformance } from '../types';
@@ -22,9 +23,9 @@ import {
 } from 'recharts';
 
 export const AsinDetail: React.FC = () => {
-    const { asin } = useParams<{ asin: string }>();
     const { selectedAccount } = useAuth();
-    const navigate = useNavigate();
+    const router = useRouter();
+    const asin = Array.isArray(router.query.asin) ? router.query.asin[0] : (router.query.asin as string | undefined);
     
     const [summary, setSummary] = useState<AsinSummary | null>(null);
     const [dailyData, setDailyData] = useState<DailyPerformance[]>([]);
@@ -54,10 +55,10 @@ export const AsinDetail: React.FC = () => {
     }, [selectedAccount, asin, startDate, endDate]);
 
     const handleBack = () => {
-        if (window.history.length > 2) {
-            navigate(-1);
+        if (typeof window !== 'undefined' && window.history.length > 2) {
+            router.back();
         } else {
-            navigate('/');
+            router.push('/');
         }
     };
 
@@ -96,7 +97,7 @@ export const AsinDetail: React.FC = () => {
             <div className="flex flex-col gap-4 bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-sm">
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-[-8px]">
-                    <Link to="/" className="hover:text-indigo-400 flex items-center gap-1">
+                    <Link href="/" className="hover:text-indigo-400 flex items-center gap-1">
                         <Home className="w-3 h-3" /> Dashboard
                     </Link>
                     <ChevronRight className="w-3 h-3" />
@@ -123,7 +124,7 @@ export const AsinDetail: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full md:w-auto">
                         <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
                         <Link 
-                            to={`/asin/${asin}/datewise`}
+                            href={`/asin/${asin}/datewise`}
                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-indigo-900/30 h-[42px] whitespace-nowrap"
                         >
                             <Calendar className="w-4 h-4" />
@@ -240,3 +241,5 @@ export const AsinDetail: React.FC = () => {
         </div>
     );
 };
+
+export default AsinDetail;

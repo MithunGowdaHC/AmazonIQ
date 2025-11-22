@@ -287,3 +287,5 @@ export const AccountHistory: React.FC = () => {
         </div>
     );
 };
+
+export default AccountHistory;

@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { getDailyPerformance } from '../services/dataService';
 import { DailyPerformance } from '../types';
 import { Card } from '../components/ui/Card';
@@ -9,8 +10,8 @@ import { Download, ArrowLeft, Home, ChevronRight } from 'lucide-react';
 import { subDays, format, parseISO } from 'date-fns';
 
 export const AsinDatewise: React.FC = () => {
-    const { asin } = useParams<{ asin: string }>();
-    const navigate = useNavigate();
+    const router = useRouter();
+    const asin = Array.isArray(router.query.asin) ? router.query.asin[0] : (router.query.asin as string | undefined);
     const [data, setData] = useState<DailyPerformance[]>([]);
     const [loading, setLoading] = useState(true);
     
@@ -29,10 +30,10 @@ export const AsinDatewise: React.FC = () => {
     }, [asin, startDate, endDate]);
 
     const handleBack = () => {
-        if (window.history.length > 2) {
-            navigate(-1);
+        if (typeof window !== 'undefined' && window.history.length > 2) {
+            router.back();
         } else {
-            navigate(`/analytics/${asin}`);
+            router.push(`/analytics/${asin}`);
         }
     };
 
@@ -81,13 +82,13 @@ export const AsinDatewise: React.FC = () => {
             <div className="flex flex-col gap-4 shrink-0 bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-sm">
                  {/* Breadcrumb */}
                  <div className="flex items-center gap-2 text-xs text-slate-500 mb-[-8px]">
-                    <Link to="/" className="hover:text-indigo-400 flex items-center gap-1">
+                    <Link href="/" className="hover:text-indigo-400 flex items-center gap-1">
                         <Home className="w-3 h-3" /> Dashboard
                     </Link>
                     <ChevronRight className="w-3 h-3" />
-                    <Link to="/analytics" className="hover:text-indigo-400">Analytics</Link>
+                    <Link href="/analytics" className="hover:text-indigo-400">Analytics</Link>
                     <ChevronRight className="w-3 h-3" />
-                    <Link to={`/analytics/${asin}`} className="hover:text-indigo-400">{asin}</Link>
+                    <Link href={`/analytics/${asin}`} className="hover:text-indigo-400">{asin}</Link>
                     <ChevronRight className="w-3 h-3" />
                     <span className="font-medium text-slate-400">Pivot</span>
                 </div>
@@ -191,3 +192,5 @@ export const AsinDatewise: React.FC = () => {
         </div>
     );
 };
+
+export default AsinDatewise;

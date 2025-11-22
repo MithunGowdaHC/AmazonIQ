@@ -2,8 +2,9 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/": "pages/index.js",
   "/dashboard": "pages/dashboard.js",
   "/analytics": "pages/analytics.js",
   "/analytics/[asin]": "pages/analytics/[asin].js",
-  "/analytics/[asin]/pivot": "pages/analytics/[asin]/pivot.js"
+  "/history": "pages/history.js"
 }

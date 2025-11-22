@@ -80,7 +80,7 @@ const InProgress: React.FC<{ accountName: string }> = ({ accountName }) => (
             <div className="absolute inset-0 rounded-full border border-indigo-500/30 animate-ping opacity-20"></div>
             <Construction className="w-10 h-10 text-indigo-400" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-100 mb-2">Intelligence Loading...</h2>
+        <h2 className="text-2xl font-bold text-slate-100 mb-2"> Loading...</h2>
         <p className="text-slate-400 max-w-md mb-6">
             The data pipeline for <span className="text-indigo-400 font-semibold">{accountName}</span> is currently being established.
         </p>

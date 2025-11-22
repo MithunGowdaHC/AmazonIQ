@@ -1,3 +1,4 @@
+
 import { AsinSummary, DailyPerformance, CampaignPerformance, DateRange } from '../types';
 import { MOCK_DATABASE } from './mockData';
 import { subDays, differenceInDays, parseISO, format } from 'date-fns';
@@ -11,7 +12,7 @@ const filterDataByDate = (data: DailyPerformance[], start: string, end: string) 
 const aggregateMetrics = (history: DailyPerformance[]) => {
     const sum = history.reduce((acc, curr) => ({
         spend: acc.spend + curr.spend,
-        totalSales: acc.totalSales + curr.totalSales,
+        overallSales: acc.overallSales + curr.overallSales,
         paidSales: acc.paidSales + curr.paidSales,
         organicSales: acc.organicSales + curr.organicSales,
         totalOrders: acc.totalOrders + curr.totalOrders,
@@ -20,7 +21,7 @@ const aggregateMetrics = (history: DailyPerformance[]) => {
         impressions: acc.impressions + curr.impressions,
         clicks: acc.clicks + curr.clicks,
     }), {
-        spend: 0, totalSales: 0, paidSales: 0, organicSales: 0, 
+        spend: 0, overallSales: 0, paidSales: 0, organicSales: 0, 
         totalOrders: 0, paidOrders: 0, glanceViews: 0, impressions: 0, clicks: 0
     });
 
@@ -83,7 +84,7 @@ export const getAsinSummaries = async (accountId: string, dateRange: DateRange):
 
         const trends = {
             spend: calculateTrend(currentMetrics.spend, prevMetrics.spend),
-            totalSales: calculateTrend(currentMetrics.totalSales, prevMetrics.totalSales),
+            overallSales: calculateTrend(currentMetrics.overallSales, prevMetrics.overallSales),
             roas: calculateTrend(currentMetrics.roas, prevMetrics.roas),
             glanceViews: calculateTrend(currentMetrics.glanceViews, prevMetrics.glanceViews),
             cpc: calculateTrend(currentMetrics.cpc, prevMetrics.cpc),
@@ -100,7 +101,7 @@ export const getAsinSummaries = async (accountId: string, dateRange: DateRange):
         });
     });
 
-    return summaries.sort((a, b) => b.totalSales - a.totalSales);
+    return summaries.sort((a, b) => b.overallSales - a.overallSales);
 };
 
 export const getAsinDetails = async (asin: string, accountId: string, dateRange: DateRange): Promise<AsinSummary | undefined> => {
@@ -130,7 +131,7 @@ export const getAccountDailyPerformance = async (accountId: string, dateRange: D
                 accountData[day.date] = { ...day, date: day.date };
             } else {
                 const acc = accountData[day.date];
-                acc.totalSales += day.totalSales;
+                acc.overallSales += day.overallSales;
                 acc.paidSales += day.paidSales;
                 acc.organicSales += day.organicSales;
                 acc.spend += day.spend;

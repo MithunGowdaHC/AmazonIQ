@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/authContext';
@@ -134,7 +135,7 @@ export const AsinDetail: React.FC = () => {
 
             {/* Highlight Metrics Strip */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <MetricPill label="Total Sales" value={`₹${summary.totalSales.toLocaleString()}`} />
+                <MetricPill label="Overall Sales" value={`₹${summary.overallSales.toLocaleString()}`} />
                 <MetricPill label="Paid Sales" value={`₹${summary.paidSales.toLocaleString()}`} colorClass="text-indigo-400" />
                 <MetricPill label="Spend" value={`₹${summary.spend.toLocaleString()}`} />
                 <MetricPill label="ACOS" value={`${summary.acos.toFixed(1)}%`} colorClass={summary.acos > 40 ? 'text-rose-400' : 'text-emerald-400'} />
@@ -163,7 +164,7 @@ export const AsinDetail: React.FC = () => {
                                     itemStyle={{ color: '#cbd5e1' }}
                                 />
                                 <Legend />
-                                <Area yAxisId="left" type="monotone" dataKey="totalSales" name="Total Sales" fill="url(#colorSales)" stroke="#6366f1" strokeWidth={2} />
+                                <Area yAxisId="left" type="monotone" dataKey="overallSales" name="Overall Sales" fill="url(#colorSales)" stroke="#6366f1" strokeWidth={2} />
                                 <Line yAxisId="right" type="monotone" dataKey="spend" name="Spend" stroke="#f43f5e" strokeWidth={2} dot={false} />
                             </ComposedChart>
                         </ResponsiveContainer>

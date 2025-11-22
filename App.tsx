@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './services/authContext';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
-import { AsinDetail } from './pages/AsinDetail';
+import { AsinAnalytics } from './pages/AsinAnalytics';
 import { AsinDatewise } from './pages/AsinDatewise';
 import { AccessDenied } from './pages/AccessDenied';
 import { Welcome } from './pages/Welcome';
@@ -21,8 +22,11 @@ function App() {
             {/* Main App Routes */}
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/history" element={<Layout><AccountHistory /></Layout>} />
-            <Route path="/asin/:asin" element={<Layout><AsinDetail /></Layout>} />
-            <Route path="/asin/:asin/datewise" element={<Layout><AsinDatewise /></Layout>} />
+            
+            {/* New Deep Dive Structure */}
+            <Route path="/analytics" element={<Layout><AsinAnalytics /></Layout>} />
+            <Route path="/analytics/:asin" element={<Layout><AsinAnalytics /></Layout>} />
+            <Route path="/analytics/:asin/pivot" element={<Layout><AsinDatewise /></Layout>} />
             
             <Route path="/no-access" element={<AccessDenied />} />
             <Route path="*" element={<Navigate to="/" replace />} />

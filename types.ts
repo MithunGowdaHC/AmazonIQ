@@ -1,3 +1,4 @@
+
 export interface Account {
   id: string;
   name: string;
@@ -28,7 +29,7 @@ export interface AsinMetadata {
 // Corresponds to VIEW: ads_asin_summary + VIEW: asin_total_sales_summary
 export interface AsinSummary extends AsinMetadata {
   // Sales
-  totalSales: number;
+  overallSales: number; // Renamed from totalSales
   paidSales: number;
   organicSales: number;
   
@@ -59,7 +60,7 @@ export interface AsinSummary extends AsinMetadata {
   // Trends (Percentage change vs previous period)
   trends?: {
     spend: number;
-    totalSales: number;
+    overallSales: number; // Renamed from totalSales
     roas: number;
     glanceViews: number;
     cpc: number;
@@ -71,7 +72,7 @@ export interface AsinSummary extends AsinMetadata {
 export interface DailyPerformance {
   date: string;
   spend: number;
-  totalSales: number;
+  overallSales: number; // Renamed from totalSales
   paidSales: number;
   organicSales: number;
   glanceViews: number;
@@ -80,6 +81,8 @@ export interface DailyPerformance {
   totalOrders: number;
   paidOrders: number;
   conversionRate: number;
+  paidGlanceViews?: number;
+  organicGlanceViews?: number;
 }
 
 export interface CampaignPerformance {
@@ -93,4 +96,11 @@ export interface CampaignPerformance {
   sales: number;
   orders: number;
   roas: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
 }

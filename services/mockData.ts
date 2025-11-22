@@ -1,3 +1,4 @@
+
 import { Account, DailyPerformance, AsinMetadata } from '../types';
 import { subDays, format, addDays } from 'date-fns';
 
@@ -42,7 +43,7 @@ const generateDailyHistory = (asin: string, baseSales: number): DailyPerformance
         
         history.push({
             date: dateStr,
-            totalSales: sales,
+            overallSales: sales, // Renamed
             paidSales: paidSales,
             organicSales: organicSales,
             spend: spend,

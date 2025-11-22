@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[570],{6130:function(n,u,t){(window.__NEXT_P=window.__NEXT_P||[]).push(["/analytics/[asin]",function(){return t(1782)}])},1782:function(n,u,t){"use strict";t.r(u);var _=t(9599);u.default=_.default}},function(n){n.O(0,[466,603,350,102,688,599,774,888,179],function(){return n(n.s=6130)}),_N_E=n.O()}]);

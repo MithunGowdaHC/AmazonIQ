@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[624],{9596:function(n,u,t){(window.__NEXT_P=window.__NEXT_P||[]).push(["/analytics/[asin]/pivot",function(){return t(6838)}])},6838:function(n,u,t){"use strict";t.r(u);var _=t(47);u.default=_.default}},function(n){n.O(0,[466,688,47,774,888,179],function(){return n(n.s=9596)}),_N_E=n.O()}]);

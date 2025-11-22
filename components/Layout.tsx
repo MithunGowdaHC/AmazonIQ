@@ -28,6 +28,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       return current.startsWith(path);
   };
 
+  const handleNavClick = (href: string, e?: React.MouseEvent) => {
+    if (router.pathname === href) {
+      e?.preventDefault();
+      return;
+    }
+  };
+
   if (isAccessDenied) {
       return <>{children}</>;
   }
@@ -95,7 +102,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-3 mt-2">Overview</p>
                                                 <Link 
                         href="/dashboard" 
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={(e) => handleNavClick('/dashboard', e)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
                     >
             <LayoutDashboard className="w-4 h-4" />
@@ -105,7 +112,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-3 mt-6">Deep Dive</p>
                     <Link 
                         href="/analytics" 
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={(e) => { handleNavClick('/analytics', e); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/analytics') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
                     >
             <BarChart2 className="w-4 h-4" />
@@ -113,7 +120,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     </Link>
                     <Link 
                         href="/history" 
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={(e) => { handleNavClick('/history', e); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive('/history') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}
                     >
             <History className="w-4 h-4" />

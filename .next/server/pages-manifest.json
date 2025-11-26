@@ -4,7 +4,7 @@
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
   "/dashboard": "pages/dashboard.js",
+  "/api/dashboard/asin-summaries": "pages/api/dashboard/asin-summaries.js",
   "/analytics": "pages/analytics.js",
-  "/analytics/[asin]": "pages/analytics/[asin].js",
-  "/history": "pages/history.js"
+  "/analytics/[asin]": "pages/analytics/[asin].js"
 }

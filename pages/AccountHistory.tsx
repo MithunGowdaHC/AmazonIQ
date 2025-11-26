@@ -264,7 +264,7 @@ export const AccountHistory: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-3.5 text-slate-300">₹{row.spend.toLocaleString()}</td>
                                             <td className="px-4 py-3.5 text-slate-300">₹{row.paidSales.toLocaleString()}</td>
-                                            <td className="px-4 py-3.5 font-bold text-indigo-400">₹{row.overallSales.toLocaleString()}</td>
+                                            <td className="px-4 py-3.5 font-bold text-indigo-400">₹{Math.round(row.overallSales).toLocaleString()}</td>
                                             <td className="px-4 py-3.5 text-slate-400">{row.totalOrders}</td>
                                             <td className="px-4 py-3.5 text-slate-500">{row.impressions.toLocaleString()}</td>
                                             <td className="px-4 py-3.5 text-slate-500">{row.clicks.toLocaleString()}</td>

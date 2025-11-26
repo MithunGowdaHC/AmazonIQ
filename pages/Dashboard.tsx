@@ -8,7 +8,7 @@ import { GoogleDateRangePicker } from '../components/ui/GoogleDateRangePicker';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { subDays, format } from 'date-fns';
-import { 
+import {
     ArrowRight,
     TrendingUp,
     Construction,
@@ -20,27 +20,27 @@ import {
     ArrowDown,
     ChevronDown
 } from 'lucide-react';
-import { 
-    BarChart, 
-    Bar, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
     ResponsiveContainer,
     Legend
 } from 'recharts';
 
 // Formatter
 const formatCurrency = (val: number) => {
-    if (val >= 100000) return `₹${(val / 100000).toFixed(2)}L`;
-    if (val >= 1000) return `₹${(val / 1000).toFixed(1)}K`;
-    return `₹${val.toLocaleString()}`;
+    if (val >= 100000) return `₹${(val / 100000).toFixed(0)}L`;
+    if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`;
+    return `₹${Math.round(val).toLocaleString()}`;
 };
 
 const formatNumber = (val: number) => {
-    if (val >= 1000) return `${(val / 1000).toFixed(1)}k`;
-    return val.toLocaleString();
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
+    return Math.round(val).toLocaleString();
 };
 
 // New Smart KPI Card - REMOVED Comparison Text as requested
@@ -54,11 +54,11 @@ const KPICard: React.FC<{
     const isPositive = trend !== undefined ? trend > 0 : false;
     const isGood = isInverse ? !isPositive : isPositive;
     const trendVal = trend !== undefined ? Math.abs(trend).toFixed(1) : '0.0';
-    
+
     return (
         <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors shadow-lg shadow-black/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-slate-800/20 to-transparent rounded-bl-full -mr-4 -mt-4 transition-opacity opacity-50 group-hover:opacity-100"></div>
-            
+
             <div className="flex justify-between items-start mb-2">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</p>
                 {trend !== undefined && (
@@ -101,7 +101,7 @@ const SalesTooltip = ({ active, payload, label }: any) => {
             <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl min-w-[180px]">
                 <p className="text-xs text-slate-400 font-medium mb-2 border-b border-slate-800 pb-1 truncate max-w-[160px]" title={label}>{label}</p>
                 <div className="space-y-1.5">
-                     <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center">
                         <span className="text-xs text-slate-300">Overall Sales</span>
                         <span className="text-sm font-bold text-white">₹{overall.toLocaleString()}</span>
                     </div>
@@ -131,8 +131,8 @@ const SalesTooltip = ({ active, payload, label }: any) => {
 type SortKey = keyof AsinSummary | 'cvr';
 type SortDirection = 'asc' | 'desc';
 interface SortConfig {
-  key: SortKey;
-  direction: SortDirection;
+    key: SortKey;
+    direction: SortDirection;
 }
 
 export const Dashboard: React.FC = () => {
@@ -142,7 +142,7 @@ export const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
     const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-    
+
     // Table State
     const [rowsLimit, setRowsLimit] = useState<string>('All');
 
@@ -215,7 +215,7 @@ export const Dashboard: React.FC = () => {
             if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         });
-        
+
         if (rowsLimit === 'All') return result;
         return result.slice(0, parseInt(rowsLimit));
     }, [data, sortConfig, rowsLimit]);
@@ -223,11 +223,11 @@ export const Dashboard: React.FC = () => {
     // CSV Export
     const exportCSV = () => {
         const headers = [
-            "ASIN", "Product Name", "Spends", "Paid Sales", "Orders", 
-            "Impressions", "Clicks", "ROAS", "CVR", "Overall Sales", 
+            "ASIN", "Product Name", "Spends", "Paid Sales", "Orders",
+            "Impressions", "Clicks", "ROAS", "CVR", "Overall Sales",
             "Indexed GV", "Paid GV", "Organic GV"
         ];
-        
+
         const rows = sortedData.map(row => {
             const cvr = row.glanceViews > 0 ? (row.totalOrders / row.glanceViews) * 100 : 0;
             return [
@@ -259,13 +259,13 @@ export const Dashboard: React.FC = () => {
     // Table Header Helper
     const SortIcon = ({ column }: { column: SortKey }) => {
         if (sortConfig.key !== column) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-30" />;
-        return sortConfig.direction === 'asc' 
-            ? <ArrowUp className="w-3 h-3 ml-1 text-indigo-400" /> 
+        return sortConfig.direction === 'asc'
+            ? <ArrowUp className="w-3 h-3 ml-1 text-indigo-400" />
             : <ArrowDown className="w-3 h-3 ml-1 text-indigo-400" />;
     };
 
-    const HeaderCell = ({ label, sortKey, align = 'right', color, width }: { label: string, sortKey: SortKey, align?: 'left'|'right'|'center', color?: string, width?: string }) => (
-        <th 
+    const HeaderCell = ({ label, sortKey, align = 'right', color, width }: { label: string, sortKey: SortKey, align?: 'left' | 'right' | 'center', color?: string, width?: string }) => (
+        <th
             className={`px-4 py-4 cursor-pointer hover:bg-slate-800 transition-colors select-none group ${align === 'left' ? 'text-left' : align === 'center' ? 'text-center' : 'text-right'} ${color} ${width}`}
             onClick={() => handleSort(sortKey)}
         >
@@ -287,7 +287,7 @@ export const Dashboard: React.FC = () => {
     const totalPaidSales = data.reduce((sum, i) => sum + i.paidSales, 0);
     const totalClicks = data.reduce((sum, i) => sum + i.clicks, 0);
     const totalOrders = data.reduce((sum, i) => sum + i.totalOrders, 0);
-    
+
     const avgRoas = totalSpend > 0 ? totalPaidSales / totalSpend : 0;
     const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
     const avgCvr = totalGV > 0 ? (totalOrders / totalGV) * 100 : 0;
@@ -311,17 +311,17 @@ export const Dashboard: React.FC = () => {
                     </p>
                 </div>
                 <div className="w-full lg:w-auto">
-                     <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={handleDateChange} />
+                    <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={handleDateChange} />
                 </div>
             </div>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                     <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-                     <p className="text-sm text-slate-500 font-medium animate-pulse">Aggregating Data Points...</p>
+                    <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <p className="text-sm text-slate-500 font-medium animate-pulse">Aggregating Data Points...</p>
                 </div>
             ) : data.length === 0 ? (
-                 <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-slate-800 border-dashed">
+                <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-slate-800 border-dashed">
                     <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                         <TrendingUp className="w-8 h-8 text-slate-600" />
                     </div>
@@ -334,12 +334,14 @@ export const Dashboard: React.FC = () => {
                 <>
                     {/* KPI Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                         <KPICard title="Spends" value={formatCurrency(totalSpend)} trend={mockTrendSpend} isInverse={true} />
-                         <KPICard title="Overall Sales" value={formatCurrency(overallSales)} trend={mockTrendSales} />
-                         <KPICard title="RoAS" value={avgRoas.toFixed(2)} trend={mockTrendRoas} />
-                         <KPICard title="Glance Views" value={formatNumber(totalGV)} trend={mockTrendGV} />
-                         <KPICard title="CPC" value={`₹${avgCpc.toFixed(1)}`} trend={mockTrendCPC} isInverse={true} />
-                         <KPICard title="CVR" value={`${avgCvr.toFixed(2)}%`} trend={mockTrendCVR} />
+                        <KPICard title="Spends" value={formatCurrency(totalSpend)} trend={mockTrendSpend} isInverse={true} />
+                        <KPICard title="Sales" value={formatCurrency(totalPaidSales)} trend={mockTrendSpend} isInverse={true} />
+
+                        <KPICard title="Overall Sales" value={formatCurrency(overallSales)} trend={mockTrendSales} />
+                        <KPICard title="RoAS" value={avgRoas.toFixed(2)} trend={mockTrendRoas} />
+                        <KPICard title="Glance Views" value={formatNumber(totalGV)} trend={mockTrendGV} />
+                        <KPICard title="CPC" value={`₹${avgCpc.toFixed(1)}`} trend={mockTrendCPC} isInverse={true} />
+                        {/* <KPICard title="CVR" value={`${avgCvr.toFixed(2)}%`} trend={mockTrendCVR} /> */}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -350,11 +352,11 @@ export const Dashboard: React.FC = () => {
                                     <BarChart data={data.slice(0, 15)} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barGap={4}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                                         <XAxis dataKey="itemName" tick={false} axisLine={false} />
-                                        <YAxis stroke="#64748b" fontSize={11} tickFormatter={(val) => `₹${val/1000}k`} axisLine={false} tickLine={false} />
-                                        <Tooltip content={<SalesTooltip />} cursor={{fill: '#1e293b', opacity: 0.4}} />
+                                        <YAxis stroke="#64748b" fontSize={11} tickFormatter={(val) => `₹${val / 1000}k`} axisLine={false} tickLine={false} />
+                                        <Tooltip content={<SalesTooltip />} cursor={{ fill: '#1e293b', opacity: 0.4 }} />
                                         <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                                        <Bar dataKey="paidSales" name="Paid Sales" stackId="a" fill="#6366f1" radius={[0,0,0,0]} barSize={20} />
-                                        <Bar dataKey="organicSales" name="Organic Sales" stackId="a" fill="#475569" radius={[4,4,0,0]} barSize={20} />
+                                        <Bar dataKey="paidSales" name="Paid Sales" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} barSize={20} />
+                                        <Bar dataKey="organicSales" name="Organic Sales" stackId="a" fill="#475569" radius={[4, 4, 0, 0]} barSize={20} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -363,7 +365,7 @@ export const Dashboard: React.FC = () => {
                         {/* Top Performers */}
                         <Card title="Top 5 Movers" subtitle="By Revenue">
                             <div className="space-y-1 mt-2">
-                                {[...data].sort((a,b) => b.overallSales - a.overallSales).slice(0, 5).map((asin, idx) => (
+                                {[...data].sort((a, b) => b.overallSales - a.overallSales).slice(0, 5).map((asin, idx) => (
                                     <Link href={`/analytics/${asin.asin}`} key={asin.asin} className="flex items-center gap-3 py-3 px-3 hover:bg-slate-800/50 rounded-lg group cursor-pointer transition-all border border-transparent hover:border-slate-700/50">
                                         <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] shrink-0 ${idx === 0 ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30' : 'bg-slate-800 text-slate-500'}`}>#{idx + 1}</div>
                                         <div className="flex-1 min-w-0">
@@ -386,13 +388,13 @@ export const Dashboard: React.FC = () => {
                     </div>
 
                     {/* Detailed List with Sorting & Export */}
-                    <Card 
-                        title="Detailed Performance" 
-                        subtitle="ASIN Level Breakdown" 
+                    <Card
+                        title="Detailed Performance"
+                        subtitle="ASIN Level Breakdown"
                         action={
                             <div className="flex items-center gap-3">
                                 <div className="relative hidden sm:block">
-                                    <select 
+                                    <select
                                         value={rowsLimit}
                                         onChange={(e) => setRowsLimit(e.target.value)}
                                         className="appearance-none bg-slate-800 text-xs font-medium text-slate-200 pl-3 pr-8 py-1.5 rounded-lg border border-slate-700 hover:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors cursor-pointer"
@@ -446,8 +448,8 @@ export const Dashboard: React.FC = () => {
                                                     </Link>
                                                 </td>
                                                 <td className="px-4 py-3.5 text-center">
-                                                    <Link 
-                                                        href={`/analytics/${row.asin}`} 
+                                                    <Link
+                                                        href={`/analytics/${row.asin}`}
                                                         className="flex items-center justify-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600 hover:text-white text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all w-full"
                                                     >
                                                         Analyze

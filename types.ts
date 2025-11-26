@@ -2,6 +2,7 @@
 export interface Account {
   id: string;
   name: string;
+  logoUrl?: string;
   logo?: string;
 }
 
@@ -32,12 +33,12 @@ export interface AsinSummary extends AsinMetadata {
   overallSales: number; // Renamed from totalSales
   paidSales: number;
   organicSales: number;
-  
+
   // Orders
   totalOrders: number;
   paidOrders: number;
   organicOrders: number;
-  
+
   // Traffic
   glanceViews: number; // This is "Indexed GV"
   paidGlanceViews: number;
@@ -45,14 +46,14 @@ export interface AsinSummary extends AsinMetadata {
 
   impressions: number;
   clicks: number;
-  
+
   // Efficiency
   spend: number;
   acos: number;
   roas: number;
   ctr: number;
   cpc: number;
-  
+
   // Traffic Share
   organicTrafficShare: number; // percentage
   paidTrafficShare: number; // percentage
@@ -83,6 +84,10 @@ export interface DailyPerformance {
   conversionRate: number;
   paidGlanceViews?: number;
   organicGlanceViews?: number;
+  roas?: number;
+  acos?: number;
+  cpc?: number;
+  ctr?: number;
 }
 
 export interface CampaignPerformance {

@@ -3,17 +3,21 @@ import { Account, DailyPerformance, AsinMetadata } from '../types';
 import { subDays, format, addDays } from 'date-fns';
 
 export const ACCOUNTS: Account[] = [
-  { id: 'Stahl', name: 'Stahl' },
-  { id: 'Samsonite India', name: 'Samsonite India' },
-  { id: 'Continental Coffee', name: 'Continental Coffee' },
-  { id: 'Tata Retail', name: 'Tata Retail' },
+    {
+        id: 'Stahl',
+        name: 'Stahl',
+        logoUrl: 'https://stahlkitchens.com/cdn/shop/files/Mobile_Version-09_11e24f4e-e339-4645-adb7-290a7f122252_120x@2x.png?v=1659696880'
+    },
+    { id: 'Samsonite India', name: 'Samsonite India' },
+    { id: 'Continental Coffee', name: 'Continental Coffee' },
+    { id: 'Tata Retail', name: 'Tata Retail' },
 ];
 
 export const MOCK_USER = {
-  id: 'usr_mock',
-  email: 'demo@hiveminds.in',
-  name: 'Demo User',
-  allowedAccounts: ['Stahl', 'Samsonite India'] 
+    id: 'usr_mock',
+    email: 'demo@hiveminds.in',
+    name: 'Demo User',
+    allowedAccounts: ['Stahl', 'Samsonite India']
 };
 
 // --- DATA GENERATOR ---
@@ -25,22 +29,35 @@ const generateDailyHistory = (asin: string, baseSales: number): DailyPerformance
     for (let i = 90; i >= 0; i--) {
         const date = subDays(today, i);
         const dateStr = format(date, 'yyyy-MM-dd');
-        
+
         // Random fluctuation +/- 30%
-        const variance = (Math.random() * 0.6) + 0.7; 
-        
+        const variance = (Math.random() * 0.6) + 0.7;
+
         const sales = Math.round(baseSales * variance);
-        const spend = Math.round(sales * 0.25); // ~25% ACOS baseline
-        const paidSales = Math.round(sales * 0.6); // 60% paid
+
+        // Randomize ACOS (20% - 30%)
+        const acos = 0.20 + (Math.random() * 0.10);
+        const spend = Math.round(sales * acos);
+
+        // Randomize Paid Share (50% - 70%)
+        const paidShare = 0.50 + (Math.random() * 0.20);
+        const paidSales = Math.round(sales * paidShare);
         const organicSales = sales - paidSales;
-        
-        const orders = Math.round(sales / 800); // Avg ticket ~800
-        const paidOrders = Math.round(paidSales / 800);
-        
-        const gv = Math.round(orders * 25); // ~4% conversion
-        const clicks = Math.round(gv * 0.4);
-        const impressions = clicks * 200; // 0.5% CTR
-        
+
+        // Randomize Avg Ticket (750 - 850)
+        const avgTicket = 750 + Math.round(Math.random() * 100);
+        const orders = Math.round(sales / avgTicket);
+        const paidOrders = Math.round(paidSales / avgTicket);
+
+        // Randomize Conversion Rate (3% - 5%)
+        const cvr = 0.03 + (Math.random() * 0.02);
+        const gv = Math.round(orders / cvr);
+
+        // Randomize CTR (0.4% - 0.6%)
+        const ctr = 0.004 + (Math.random() * 0.002);
+        const clicks = Math.round(gv * 0.4); // Assume 40% of GVs are from ads for clicks calc base
+        const impressions = Math.round(clicks / ctr);
+
         history.push({
             date: dateStr,
             overallSales: sales, // Renamed
@@ -64,7 +81,7 @@ const ASIN_LIST = [
     { asin: 'B07DEF9012', name: 'Stahl Triply Pressure Cooker', brand: 'Stahl', baseSales: 25000 },
     { asin: 'B05GHI3456', name: 'Stahl Cast Iron Skillet', brand: 'Stahl', baseSales: 8000 },
     { asin: 'B01JKL7890', name: 'Stahl Stainless Steel Saucepot', brand: 'Stahl', baseSales: 5000 },
-    
+
     { asin: 'B0SAM11111', name: 'Samsonite Trolley Bag Large', brand: 'Samsonite India', baseSales: 45000 },
     { asin: 'B0SAM22222', name: 'American Tourister Backpack', brand: 'Samsonite India', baseSales: 12000 },
 ];

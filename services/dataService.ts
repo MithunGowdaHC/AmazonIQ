@@ -21,7 +21,7 @@ const aggregateMetrics = (history: DailyPerformance[]) => {
         impressions: acc.impressions + curr.impressions,
         clicks: acc.clicks + curr.clicks,
     }), {
-        spend: 0, overallSales: 0, paidSales: 0, organicSales: 0, 
+        spend: 0, overallSales: 0, paidSales: 0, organicSales: 0,
         totalOrders: 0, paidOrders: 0, glanceViews: 0, impressions: 0, clicks: 0
     });
 
@@ -31,7 +31,7 @@ const aggregateMetrics = (history: DailyPerformance[]) => {
     const ctr = sum.impressions > 0 ? (sum.clicks / sum.impressions) * 100 : 0;
     const cpc = sum.clicks > 0 ? sum.spend / sum.clicks : 0;
     const conversionRate = sum.glanceViews > 0 ? (sum.totalOrders / sum.glanceViews) * 100 : 0;
-    
+
     // Mock GV splits for demo
     const paidGV = Math.round(sum.glanceViews * 0.4);
     const orgGV = sum.glanceViews - paidGV;
@@ -50,58 +50,17 @@ const aggregateMetrics = (history: DailyPerformance[]) => {
 };
 
 export const getAsinSummaries = async (accountId: string, dateRange: DateRange): Promise<AsinSummary[]> => {
-    await new Promise(resolve => setTimeout(resolve, 400)); // Slight delay for realism
-
-    const summaries: AsinSummary[] = [];
-
-    // 1. Calculate Date Ranges for Comparison
-    const currentStart = parseISO(dateRange.startDate);
-    const currentEnd = parseISO(dateRange.endDate);
-    const dayDiff = differenceInDays(currentEnd, currentStart) + 1;
-    
-    const prevEnd = subDays(currentStart, 1);
-    const prevStart = subDays(prevEnd, dayDiff - 1);
-    
-    const prevStartStr = format(prevStart, 'yyyy-MM-dd');
-    const prevEndStr = format(prevEnd, 'yyyy-MM-dd');
-
-    Object.values(MOCK_DATABASE).forEach(entry => {
-        if (entry.metadata.accountId !== accountId) return;
-
-        // Current Period Data
-        const currentHistory = filterDataByDate(entry.history, dateRange.startDate, dateRange.endDate);
-        const currentMetrics = aggregateMetrics(currentHistory);
-
-        // Previous Period Data (for trends)
-        const prevHistory = filterDataByDate(entry.history, prevStartStr, prevEndStr);
-        const prevMetrics = aggregateMetrics(prevHistory);
-
-        // Calculate Trends (% Change)
-        const calculateTrend = (current: number, previous: number) => {
-            if (previous === 0) return current > 0 ? 100 : 0;
-            return ((current - previous) / previous) * 100;
-        };
-
-        const trends = {
-            spend: calculateTrend(currentMetrics.spend, prevMetrics.spend),
-            overallSales: calculateTrend(currentMetrics.overallSales, prevMetrics.overallSales),
-            roas: calculateTrend(currentMetrics.roas, prevMetrics.roas),
-            glanceViews: calculateTrend(currentMetrics.glanceViews, prevMetrics.glanceViews),
-            cpc: calculateTrend(currentMetrics.cpc, prevMetrics.cpc),
-            conversionRate: calculateTrend(currentMetrics.conversionRate, prevMetrics.conversionRate)
-        };
-
-        summaries.push({
-            ...entry.metadata,
-            ...currentMetrics,
-            paidOrders: currentMetrics.paidOrders,
-            organicTrafficShare: currentMetrics.glanceViews > 0 ? (currentMetrics.organicGlanceViews / currentMetrics.glanceViews) * 100 : 0,
-            paidTrafficShare: currentMetrics.glanceViews > 0 ? (currentMetrics.paidGlanceViews / currentMetrics.glanceViews) * 100 : 0,
-            trends
-        });
-    });
-
-    return summaries.sort((a, b) => b.overallSales - a.overallSales);
+    try {
+        const response = await fetch(`/api/dashboard/asin-summaries?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch data');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching ASIN summaries:', error);
+        return [];
+    }
 };
 
 export const getAsinDetails = async (asin: string, accountId: string, dateRange: DateRange): Promise<AsinSummary | undefined> => {
@@ -117,34 +76,17 @@ export const getDailyPerformance = async (asin: string, dateRange: DateRange): P
 };
 
 export const getAccountDailyPerformance = async (accountId: string, dateRange: DateRange): Promise<DailyPerformance[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Flatten all ASIN histories for this account
-    const accountData: Record<string, DailyPerformance> = {};
-    
-    Object.values(MOCK_DATABASE).forEach(entry => {
-        if (entry.metadata.accountId !== accountId) return;
-        
-        const filtered = filterDataByDate(entry.history, dateRange.startDate, dateRange.endDate);
-        filtered.forEach(day => {
-            if (!accountData[day.date]) {
-                accountData[day.date] = { ...day, date: day.date };
-            } else {
-                const acc = accountData[day.date];
-                acc.overallSales += day.overallSales;
-                acc.paidSales += day.paidSales;
-                acc.organicSales += day.organicSales;
-                acc.spend += day.spend;
-                acc.totalOrders += day.totalOrders;
-                acc.paidOrders += day.paidOrders;
-                acc.clicks += day.clicks;
-                acc.impressions += day.impressions;
-                acc.glanceViews += day.glanceViews;
-            }
-        });
-    });
-
-    return Object.values(accountData);
+    try {
+        const response = await fetch(`/api/account/daily-performance?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch account daily performance');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching account daily performance:', error);
+        return [];
+    }
 };
 
 export const getCampaigns = async (asin: string, dateRange: DateRange): Promise<CampaignPerformance[]> => {

@@ -1,0 +1,149 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { prisma } from '../../../lib/prisma';
+import { AsinSummary } from '../../../types';
+
+export default async function handler(
+    req: NextApiRequest,
+    res: NextApiResponse
+) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ message: 'Method not allowed' });
+    }
+
+    try {
+        const { startDate, endDate } = req.query;
+
+        const dateFilter: any = {};
+        if (startDate && endDate) {
+            dateFilter.date = {
+                gte: new Date(startDate as string),
+                lte: new Date(endDate as string),
+            };
+        }
+
+        // Fetch grouped data by ASIN
+        const [salesByAsin, adsByAsin, trafficByAsin] = await Promise.all([
+            prisma.piSalesData.groupBy({
+                by: ['asin', 'itemName', 'brand', 'category'],
+                _sum: {
+                    orderAmount: true,
+                    orderQuantity: true,
+                },
+                where: dateFilter,
+            }),
+            prisma.adsData.groupBy({
+                by: ['asin'],
+                _sum: {
+                    spend: true,
+                    paidSales: true,
+                    paidOrders: true,
+                    impressions: true,
+                    clicks: true,
+                },
+                where: dateFilter,
+            }),
+            prisma.piGvData.groupBy({
+                by: ['asin'],
+                _sum: {
+                    indexedGlanceViews: true,
+                    adNumber: true, // Paid GV
+                    organicNumber: true, // Organic GV
+                },
+                where: dateFilter,
+            }),
+        ]);
+
+        // Merge data
+        const asinMap = new Map<string, Partial<AsinSummary>>();
+
+        // Helper to get or create entry
+        const getEntry = (asin: string) => {
+            if (!asinMap.has(asin)) {
+                asinMap.set(asin, {
+                    asin,
+                    itemName: asin, // Default to ASIN if name not found
+                    brand: 'Unknown',
+                    category: 'Unknown',
+                    imageUrl: '', // Placeholder
+                    accountId: 'Stahl', // Hardcoded for now as per dashboard check
+                    overallSales: 0,
+                    paidSales: 0,
+                    organicSales: 0,
+                    totalOrders: 0,
+                    paidOrders: 0,
+                    organicOrders: 0,
+                    glanceViews: 0,
+                    paidGlanceViews: 0,
+                    organicGlanceViews: 0,
+                    impressions: 0,
+                    clicks: 0,
+                    spend: 0,
+                    acos: 0,
+                    roas: 0,
+                    ctr: 0,
+                    cpc: 0,
+                    organicTrafficShare: 0,
+                    paidTrafficShare: 0,
+                });
+            }
+            return asinMap.get(asin)!;
+        };
+
+        // Process Sales Data
+        salesByAsin.forEach((item: any) => {
+            if (!item.asin) return;
+            const entry = getEntry(item.asin);
+            entry.itemName = item.itemName || entry.itemName;
+            entry.brand = item.brand || entry.brand;
+            entry.category = item.category || entry.category;
+            entry.overallSales = Number(item._sum.orderAmount || 0);
+            entry.totalOrders = Number(item._sum.orderQuantity || 0);
+        });
+
+        // Process Ads Data
+        adsByAsin.forEach((item: any) => {
+            if (!item.asin) return;
+            const entry = getEntry(item.asin);
+            entry.spend = Number(item._sum.spend || 0);
+            entry.paidSales = Number(item._sum.paidSales || 0);
+            entry.paidOrders = Number(item._sum.paidOrders || 0);
+            entry.impressions = Number(item._sum.impressions || 0);
+            entry.clicks = Number(item._sum.clicks || 0);
+        });
+
+        // Process Traffic Data
+        trafficByAsin.forEach((item: any) => {
+            if (!item.asin) return;
+            const entry = getEntry(item.asin);
+            entry.glanceViews = Number(item._sum.indexedGlanceViews || 0);
+            entry.paidGlanceViews = Number(item._sum.adNumber || 0);
+            entry.organicGlanceViews = Number(item._sum.organicNumber || 0);
+        });
+
+        // Calculate Derived Metrics
+        const summaries = Array.from(asinMap.values()).map((entry) => {
+            const e = entry as AsinSummary;
+
+            e.organicSales = e.overallSales - e.paidSales;
+            e.organicOrders = e.totalOrders - e.paidOrders;
+
+            e.roas = e.spend > 0 ? e.paidSales / e.spend : 0;
+            e.acos = e.paidSales > 0 ? (e.spend / e.paidSales) * 100 : 0;
+            e.ctr = e.impressions > 0 ? (e.clicks / e.impressions) * 100 : 0;
+            e.cpc = e.clicks > 0 ? e.spend / e.clicks : 0;
+
+            e.organicTrafficShare = e.glanceViews > 0 ? (e.organicGlanceViews / e.glanceViews) * 100 : 0;
+            e.paidTrafficShare = e.glanceViews > 0 ? (e.paidGlanceViews / e.glanceViews) * 100 : 0;
+
+            return e;
+        });
+
+        // Sort by overall sales desc
+        summaries.sort((a, b) => b.overallSales - a.overallSales);
+
+        res.status(200).json(summaries);
+    } catch (error) {
+        console.error('Error fetching ASIN summaries:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}

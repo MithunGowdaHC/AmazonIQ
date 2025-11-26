@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdsData {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  portfolio   String?
+  campaign    String?
+  asin        String?
+  impressions Int?
+  clicks      Int?
+  spend       Decimal? @db.Decimal(18, 2)
+  paidSales   Decimal? @map("paid_sales") @db.Decimal(18, 2)
+  paidOrders  Int?     @map("paid_orders")
+  adType      String?  @map("ad_type")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("ads_data")
+}
+
+model PiGvData {
+  id                 Int      @id @default(autoincrement())
+  date               DateTime @db.Date
+  asin               String?
+  brand              String?
+  category           String?
+  subcategory        String?
+  advShareOfGv       Decimal? @map("adv_share_of_gv") @db.Decimal(18, 2)
+  indexedGlanceViews Decimal? @map("indexed_glance_views") @db.Decimal(18, 2)
+  adNumber           Decimal? @map("ad_number") @db.Decimal(18, 2)
+  organicNumber      Decimal? @map("organic_number") @db.Decimal(18, 2)
+  conversionStatus   String?  @map("conversion_status")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@map("pi_gv_data")
+}
+
+model PiSalesData {
+  id            Int      @id @default(autoincrement())
+  date          DateTime @db.Date
+  asin          String?
+  itemName      String?  @map("item_name")
+  brand         String?
+  orderAmount   Decimal? @map("order_amount") @db.Decimal(18, 2)
+  orderQuantity Decimal? @map("order_quantity") @db.Decimal(18, 2)
+  category      String?
+  subcategory   String?
+  state         String?
+  postalCode    String?  @map("postal_code")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("pi_sales_data")
+}

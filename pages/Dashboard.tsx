@@ -33,13 +33,10 @@ import {
 
 // Formatter
 const formatCurrency = (val: number) => {
-    if (val >= 100000) return `₹${(val / 100000).toFixed(0)}L`;
-    if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`;
     return `₹${Math.round(val).toLocaleString()}`;
 };
 
 const formatNumber = (val: number) => {
-    if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
     return Math.round(val).toLocaleString();
 };
 
@@ -238,7 +235,7 @@ export const Dashboard: React.FC = () => {
                 row.totalOrders,
                 row.impressions,
                 row.clicks,
-                row.roas.toFixed(2),
+                row.roas.toFixed(1),
                 cvr.toFixed(2) + "%",
                 row.overallSales,
                 row.glanceViews,
@@ -287,10 +284,11 @@ export const Dashboard: React.FC = () => {
     const totalPaidSales = data.reduce((sum, i) => sum + i.paidSales, 0);
     const totalClicks = data.reduce((sum, i) => sum + i.clicks, 0);
     const totalOrders = data.reduce((sum, i) => sum + i.totalOrders, 0);
+    const totalPaidOrders = data.reduce((sum, i) => sum + i.paidOrders, 0);
 
     const avgRoas = totalSpend > 0 ? totalPaidSales / totalSpend : 0;
     const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
-    const avgCvr = totalGV > 0 ? (totalOrders / totalGV) * 100 : 0;
+    const avgCvr = totalClicks > 0 ? (totalPaidOrders / totalClicks) * 100 : 0;
 
     // Trends
     const mockTrendSales = data.length > 0 ? data[0].trends?.overallSales : 0;
@@ -338,7 +336,7 @@ export const Dashboard: React.FC = () => {
                         <KPICard title="Sales" value={formatCurrency(totalPaidSales)} trend={mockTrendSpend} isInverse={true} />
 
                         <KPICard title="Overall Sales" value={formatCurrency(overallSales)} trend={mockTrendSales} />
-                        <KPICard title="RoAS" value={avgRoas.toFixed(2)} trend={mockTrendRoas} />
+                        <KPICard title="RoAS" value={avgRoas.toFixed(1)} trend={mockTrendRoas} />
                         <KPICard title="Glance Views" value={formatNumber(totalGV)} trend={mockTrendGV} />
                         <KPICard title="CPC" value={`₹${avgCpc.toFixed(1)}`} trend={mockTrendCPC} isInverse={true} />
                         {/* <KPICard title="CVR" value={`${avgCvr.toFixed(2)}%`} trend={mockTrendCVR} /> */}
@@ -352,7 +350,7 @@ export const Dashboard: React.FC = () => {
                                     <BarChart data={data.slice(0, 15)} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barGap={4}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                                         <XAxis dataKey="itemName" tick={false} axisLine={false} />
-                                        <YAxis stroke="#64748b" fontSize={11} tickFormatter={(val) => `₹${val / 1000}k`} axisLine={false} tickLine={false} />
+                                        <YAxis stroke="#64748b" fontSize={11} tickFormatter={(val) => `₹${val.toLocaleString()}`} axisLine={false} tickLine={false} />
                                         <Tooltip content={<SalesTooltip />} cursor={{ fill: '#1e293b', opacity: 0.4 }} />
                                         <Legend wrapperStyle={{ paddingTop: '10px' }} />
                                         <Bar dataKey="paidSales" name="Paid Sales" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} barSize={20} />
@@ -435,7 +433,7 @@ export const Dashboard: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/50">
                                     {sortedData.map((row) => {
-                                        const cvr = row.glanceViews > 0 ? (row.totalOrders / row.glanceViews) * 100 : 0;
+                                        const cvr = row.clicks > 0 ? (row.paidOrders / row.clicks) * 100 : 0;
                                         const paidShare = row.glanceViews > 0 ? (row.paidGlanceViews / row.glanceViews) * 100 : 0;
                                         const orgShare = row.glanceViews > 0 ? (row.organicGlanceViews / row.glanceViews) * 100 : 0;
 
@@ -459,9 +457,9 @@ export const Dashboard: React.FC = () => {
                                                 <td className="px-4 py-3.5 text-right font-medium text-slate-300">₹{Math.round(row.spend).toLocaleString()}</td>
                                                 <td className="px-4 py-3.5 text-right text-slate-400">₹{Math.round(row.paidSales).toLocaleString()}</td>
                                                 <td className="px-4 py-3.5 text-right">{row.totalOrders}</td>
-                                                <td className="px-4 py-3.5 text-right">{row.impressions?.toLocaleString() || 0}</td>
-                                                <td className="px-4 py-3.5 text-right">{row.clicks?.toLocaleString() || 0}</td>
-                                                <td className="px-4 py-3.5 text-right">{row.roas?.toFixed(2) || 0}</td>
+                                                <td className="px-4 py-3.5 text-right">{Math.round(row.impressions || 0).toLocaleString()}</td>
+                                                <td className="px-4 py-3.5 text-right">{Math.round(row.clicks || 0).toLocaleString()}</td>
+                                                <td className="px-4 py-3.5 text-right">{row.roas?.toFixed(1) || 0}</td>
                                                 <td className="px-4 py-3.5 text-right text-emerald-500">{cvr.toFixed(2)}%</td>
                                                 <td className="px-4 py-3.5 text-right font-bold text-indigo-400">₹{Math.round(row.overallSales).toLocaleString()}</td>
                                                 <td className="px-4 py-3.5 text-right font-medium text-slate-300">{row.glanceViews?.toLocaleString() || 0}</td>

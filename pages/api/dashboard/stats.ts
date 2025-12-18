@@ -47,15 +47,19 @@ export default async function handler(
             }),
         ]);
 
-        const totalSales = Number(salesData._sum.orderAmount || 0);
-        const adSpend = Number(adsData._sum.spend || 0);
-        const totalTraffic = Number(trafficData._sum.indexedGlanceViews || 0);
-        const paidSales = Number(adsData._sum.paidSales || 0);
+        // Round all whole number fields (no decimals)
+        const totalSales = Math.round(Number(salesData._sum.orderAmount || 0));
+        const adSpend = Math.round(Number(adsData._sum.spend || 0));
+        const totalTraffic = Math.round(Number(trafficData._sum.indexedGlanceViews || 0));
+        const paidSales = Math.round(Number(adsData._sum.paidSales || 0));
+        const organicTraffic = Math.round(Number(trafficData._sum.organicNumber || 0));
+        const paidTraffic = Math.round(Number(trafficData._sum.adNumber || 0));
+        const impressions = Math.round(Number(adsData._sum.impressions || 0));
+        const clicks = Math.round(Number(adsData._sum.clicks || 0));
 
-        const roas = adSpend > 0 ? totalSales / adSpend : 0;
-        const acos = totalSales > 0 ? (adSpend / totalSales) * 100 : 0;
-        const organicTraffic = Number(trafficData._sum.organicNumber || 0);
-        const paidTraffic = Number(trafficData._sum.adNumber || 0);
+        // Calculate ratios with max 2 decimals
+        const roas = adSpend > 0 ? parseFloat((totalSales / adSpend).toFixed(2)) : 0;
+        const acos = totalSales > 0 ? parseFloat(((adSpend / totalSales) * 100).toFixed(2)) : 0;
 
         res.status(200).json({
             totalSales,
@@ -66,8 +70,8 @@ export default async function handler(
             paidSales,
             organicTraffic,
             paidTraffic,
-            impressions: Number(adsData._sum.impressions || 0),
-            clicks: Number(adsData._sum.clicks || 0),
+            impressions,
+            clicks,
         });
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);

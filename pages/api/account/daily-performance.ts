@@ -108,15 +108,25 @@ export default async function handler(
         const dailyPerformance = Array.from(dateMap.values()).map((entry) => {
             const e = entry as DailyPerformance;
 
-            // Calculate organic sales
-            e.organicSales = e.overallSales - e.paidSales;
+            // Round all whole number fields (no decimals)
+            e.overallSales = Math.round(e.overallSales || 0);
+            e.paidSales = Math.round(e.paidSales || 0);
+            e.organicSales = Math.round((e.overallSales || 0) - (e.paidSales || 0));
+            e.totalOrders = Math.round(e.totalOrders || 0);
+            e.paidOrders = Math.round(e.paidOrders || 0);
+            e.spend = Math.round(e.spend || 0);
+            e.impressions = Math.round(e.impressions || 0);
+            e.clicks = Math.round(e.clicks || 0);
+            e.glanceViews = Math.round(e.glanceViews || 0);
+            e.paidGlanceViews = Math.round(e.paidGlanceViews || 0);
+            e.organicGlanceViews = Math.round(e.organicGlanceViews || 0);
 
-            // Calculate derived metrics
-            e.roas = e.spend > 0 ? e.paidSales / e.spend : 0;
-            e.acos = e.paidSales > 0 ? (e.spend / e.paidSales) * 100 : 0;
-            e.ctr = e.impressions > 0 ? (e.clicks / e.impressions) * 100 : 0;
-            e.cpc = e.clicks > 0 ? e.spend / e.clicks : 0;
-            e.conversionRate = e.glanceViews > 0 ? (e.totalOrders / e.glanceViews) * 100 : 0;
+            // Calculate derived metrics with max 2 decimals
+            e.roas = e.spend > 0 ? parseFloat((e.paidSales / e.spend).toFixed(2)) : 0;
+            e.acos = e.paidSales > 0 ? parseFloat(((e.spend / e.paidSales) * 100).toFixed(2)) : 0;
+            e.ctr = e.impressions > 0 ? parseFloat(((e.clicks / e.impressions) * 100).toFixed(2)) : 0;
+            e.cpc = e.clicks > 0 ? parseFloat((e.spend / e.clicks).toFixed(2)) : 0;
+            e.conversionRate = e.glanceViews > 0 ? parseFloat(((e.totalOrders / e.glanceViews) * 100).toFixed(2)) : 0;
 
             return e;
         });

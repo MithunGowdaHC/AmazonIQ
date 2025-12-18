@@ -9,17 +9,17 @@ import { Card } from '../components/ui/Card';
 import { GoogleDateRangePicker } from '../components/ui/GoogleDateRangePicker';
 import { ArrowLeft, Calendar, Search, ChevronRight, BarChart2, ChevronDown } from 'lucide-react';
 import { subDays, format } from 'date-fns';
-import { 
-    AreaChart, 
-    Area, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
-    ResponsiveContainer, 
-    Legend, 
-    ComposedChart, 
-    Line 
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend,
+    ComposedChart,
+    Line
 } from 'recharts';
 
 // Reusing the MetricPill component
@@ -34,12 +34,12 @@ export const AsinAnalytics: React.FC = () => {
     const router = useRouter();
     const asin = Array.isArray(router.query.asin) ? router.query.asin[0] : (router.query.asin as string | undefined);
     const { selectedAccount } = useAuth();
-    
+
     const [searchTerm, setSearchTerm] = useState('');
     const [summary, setSummary] = useState<AsinSummary | null>(null);
     const [dailyData, setDailyData] = useState<DailyPerformance[]>([]);
     const [loading, setLoading] = useState(false);
-    
+
     // Chart Toggle State
     const [trafficView, setTrafficView] = useState<'sales' | 'gv'>('sales');
 
@@ -58,7 +58,7 @@ export const AsinAnalytics: React.FC = () => {
         if (selectedAccount && asin) {
             setLoading(true);
             const range = { startDate, endDate };
-            
+
             Promise.all([
                 getAsinDetails(asin, selectedAccount.id, range),
                 getDailyPerformance(asin, range)
@@ -93,18 +93,18 @@ export const AsinAnalytics: React.FC = () => {
                     </div>
                     <h1 className="text-3xl font-bold text-slate-100 mb-3">ASIN Deep Dive</h1>
                     <p className="text-slate-400 mb-8">Enter an ASIN to retrieve comprehensive performance metrics.</p>
-                    
+
                     <form onSubmit={handleSearch} className="relative">
-                        <input 
-                            type="text" 
-                            placeholder="Enter ASIN (e.g., B08XYZ1234)" 
+                        <input
+                            type="text"
+                            placeholder="Enter ASIN (e.g., B08XYZ1234)"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-lg rounded-xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-xl"
                             autoFocus
                         />
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500" />
-                        <button 
+                        <button
                             type="submit"
                             disabled={!searchTerm.trim()}
                             className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-0 disabled:pointer-events-none"
@@ -112,10 +112,10 @@ export const AsinAnalytics: React.FC = () => {
                             Analyze
                         </button>
                     </form>
-                    
+
                     <div className="mt-8 flex gap-3 justify-center flex-wrap">
                         {['B08XYZ1234', 'B0SAM11111'].map(ex => (
-                            <button 
+                            <button
                                 key={ex}
                                 onClick={() => router.push(`/analytics/${ex}`)}
                                 className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 hover:border-indigo-500/50 hover:text-indigo-400 transition-all"
@@ -136,7 +136,7 @@ export const AsinAnalytics: React.FC = () => {
             <p className="text-sm">Analyzing Intelligence for {asin}...</p>
         </div>
     );
-    
+
     // --- STATE: NOT FOUND ---
     if (!summary) return (
         <div className="flex flex-col items-center justify-center h-[80vh] text-center px-4">
@@ -175,8 +175,8 @@ export const AsinAnalytics: React.FC = () => {
 
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <button 
-                            onClick={handleBack} 
+                        <button
+                            onClick={handleBack}
                             className="p-2 hover:bg-slate-800 rounded-full transition-colors border border-transparent hover:border-slate-700 text-slate-400"
                             title="New Search"
                         >
@@ -192,7 +192,7 @@ export const AsinAnalytics: React.FC = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full xl:w-auto">
                         <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
-                        <Link 
+                        <Link
                             href={`/analytics/${asin}/pivot`}
                             className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-indigo-900/30 h-[42px] whitespace-nowrap w-full sm:w-auto"
                         >
@@ -205,8 +205,8 @@ export const AsinAnalytics: React.FC = () => {
 
             {/* Single Row Data Table */}
             <Card title="Performance Snapshot" className="overflow-hidden">
-                 <div className="overflow-x-auto -mx-6 my-[-12px] scrollbar-hide">
-                     <table className="w-full text-right text-sm">
+                <div className="overflow-x-auto -mx-6 my-[-12px] scrollbar-hide">
+                    <table className="w-full text-right text-sm">
                         <thead className="bg-slate-950/50 text-[10px] text-slate-500 uppercase font-bold border-b border-slate-800">
                             <tr>
                                 <th className="px-4 py-3 text-left pl-6 min-w-[120px]">Product</th>
@@ -225,14 +225,14 @@ export const AsinAnalytics: React.FC = () => {
                         <tbody className="text-xs font-medium text-slate-300">
                             <tr>
                                 <td className="px-4 py-4 text-left pl-6 text-slate-100 font-bold">{summary.asin}</td>
-                                <td className="px-4 py-4">₹{summary.spend.toLocaleString()}</td>
-                                <td className="px-4 py-4 text-indigo-400 font-bold">₹{summary.overallSales.toLocaleString()}</td>
-                                <td className="px-4 py-4">{summary.totalOrders}</td>
-                                <td className="px-4 py-4">{summary.impressions.toLocaleString()}</td>
-                                <td className="px-4 py-4">{summary.clicks.toLocaleString()}</td>
+                                <td className="px-4 py-4">₹{Math.round(summary.spend).toLocaleString()}</td>
+                                <td className="px-4 py-4 text-indigo-400 font-bold">₹{Math.round(summary.overallSales).toLocaleString()}</td>
+                                <td className="px-4 py-4">{summary.paidOrders}</td>
+                                <td className="px-4 py-4">{Math.round(summary.impressions).toLocaleString()}</td>
+                                <td className="px-4 py-4">{Math.round(summary.clicks).toLocaleString()}</td>
                                 <td className="px-4 py-4">₹{summary.cpc.toFixed(1)}</td>
-                                <td className="px-4 py-4 text-emerald-500">{((summary.totalOrders / summary.glanceViews) * 100 || 0).toFixed(2)}%</td>
-                                <td className="px-4 py-4">{summary.glanceViews.toLocaleString()}</td>
+                                <td className="px-4 py-4 text-emerald-500">{((summary.paidOrders / summary.clicks) * 100 || 0).toFixed(2)}%</td>
+                                <td className="px-4 py-4">{Math.round(summary.glanceViews).toLocaleString()}</td>
                                 <td className="px-4 py-4 text-slate-500">
                                     <div>{summary.paidGlanceViews.toLocaleString()}</div>
                                     <div className="text-[10px] text-slate-600 font-mono">({paidShare.toFixed(0)}%)</div>
@@ -243,17 +243,17 @@ export const AsinAnalytics: React.FC = () => {
                                 </td>
                             </tr>
                         </tbody>
-                     </table>
-                 </div>
+                    </table>
+                </div>
             </Card>
 
             {/* Highlight Metrics Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <MetricPill label="Overall Sales" value={`₹${summary.overallSales.toLocaleString()}`} />
-                <MetricPill label="Paid Sales" value={`₹${summary.paidSales.toLocaleString()}`} colorClass="text-indigo-400" />
-                <MetricPill label="Spend" value={`₹${summary.spend.toLocaleString()}`} />
+                <MetricPill label="Overall Sales" value={`₹${Math.round(summary.overallSales).toLocaleString()}`} />
+                <MetricPill label="Paid Sales" value={`₹${Math.round(summary.paidSales).toLocaleString()}`} colorClass="text-indigo-400" />
+                <MetricPill label="Spend" value={`₹${Math.round(summary.spend).toLocaleString()}`} />
                 <MetricPill label="ACOS" value={`${summary.acos.toFixed(1)}%`} colorClass={summary.acos > 40 ? 'text-rose-400' : 'text-emerald-400'} />
-                <MetricPill label="ROAS" value={summary.roas.toFixed(2)} />
+                <MetricPill label="ROAS" value={summary.roas.toFixed(1)} />
                 <MetricPill label="CTR" value={`${summary.ctr.toFixed(2)}%`} />
             </div>
 
@@ -265,15 +265,15 @@ export const AsinAnalytics: React.FC = () => {
                             <ComposedChart data={dailyData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                                 <defs>
                                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid stroke="#1e293b" vertical={false} strokeDasharray="3 3" />
                                 <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                                <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v/1000}k`} tickLine={false} axisLine={false} />
-                                <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v/1000}k`} tickLine={false} axisLine={false} />
-                                <Tooltip 
+                                <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v / 1000}k`} tickLine={false} axisLine={false} />
+                                <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v / 1000}k`} tickLine={false} axisLine={false} />
+                                <Tooltip
                                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '8px' }}
                                     itemStyle={{ color: '#cbd5e1' }}
                                 />
@@ -290,7 +290,7 @@ export const AsinAnalytics: React.FC = () => {
                         {funnelData.map((item, idx) => {
                             const widthPercent = idx === 0 ? 100 : (funnelData[0].value > 0 ? (item.value / funnelData[0].value) * 100 : 0);
                             const visualWidth = Math.max(widthPercent, 10);
-                            
+
                             return (
                                 <div key={item.name} className="relative group">
                                     <div className="flex justify-between text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">
@@ -298,7 +298,7 @@ export const AsinAnalytics: React.FC = () => {
                                         <span className="text-slate-200">{item.value.toLocaleString()}</span>
                                     </div>
                                     <div className="h-4 bg-slate-800 rounded-full overflow-hidden relative">
-                                        <div 
+                                        <div
                                             className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(99,102,241,0.3)]"
                                             style={{ width: `${visualWidth}%`, backgroundColor: item.fill }}
                                         ></div>
@@ -311,11 +311,11 @@ export const AsinAnalytics: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card 
-                    title="Traffic Breakdown" 
+                <Card
+                    title="Traffic Breakdown"
                     action={
                         <div className="relative">
-                            <select 
+                            <select
                                 value={trafficView}
                                 onChange={(e) => setTrafficView(e.target.value as 'sales' | 'gv')}
                                 className="appearance-none bg-slate-800 text-xs font-medium text-slate-200 pl-3 pr-8 py-1.5 rounded-lg border border-slate-700 hover:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors cursor-pointer"
@@ -329,15 +329,15 @@ export const AsinAnalytics: React.FC = () => {
                 >
                     <div className="h-64 mt-4">
                         <ResponsiveContainer width="100%" height="100%">
-                             <AreaChart data={dailyData} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                            <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                     </linearGradient>
                                     <linearGradient id="colorOrg" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid stroke="#1e293b" vertical={false} />
@@ -345,37 +345,37 @@ export const AsinAnalytics: React.FC = () => {
                                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '8px' }} />
                                 <Legend />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey={trafficView === 'sales' ? 'organicSales' : 'organicGlanceViews'} 
-                                    stackId="1" 
-                                    stroke="#10b981" 
-                                    fill="url(#colorOrg)" 
-                                    name={trafficView === 'sales' ? 'Organic Sales' : 'Organic GV'} 
+                                <Area
+                                    type="monotone"
+                                    dataKey={trafficView === 'sales' ? 'organicSales' : 'organicGlanceViews'}
+                                    stackId="1"
+                                    stroke="#10b981"
+                                    fill="url(#colorOrg)"
+                                    name={trafficView === 'sales' ? 'Organic Sales' : 'Organic GV'}
                                 />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey={trafficView === 'sales' ? 'paidSales' : 'paidGlanceViews'} 
-                                    stackId="1" 
-                                    stroke="#6366f1" 
-                                    fill="url(#colorPaid)" 
-                                    name={trafficView === 'sales' ? 'Paid Sales' : 'Paid GV'} 
+                                <Area
+                                    type="monotone"
+                                    dataKey={trafficView === 'sales' ? 'paidSales' : 'paidGlanceViews'}
+                                    stackId="1"
+                                    stroke="#6366f1"
+                                    fill="url(#colorPaid)"
+                                    name={trafficView === 'sales' ? 'Paid Sales' : 'Paid GV'}
                                 />
-                             </AreaChart>
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
 
-                 <Card title="Conversion Rate Trend">
+                <Card title="Conversion Rate Trend">
                     <div className="h-64 mt-4">
                         <ResponsiveContainer width="100%" height="100%">
-                             <ComposedChart data={dailyData} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                            <ComposedChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <CartesianGrid stroke="#1e293b" vertical={false} />
                                 <XAxis dataKey="date" tickFormatter={(d) => d.slice(8)} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                                 <YAxis stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v}%`} tickLine={false} axisLine={false} />
                                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '8px' }} />
                                 <Line type="monotone" dataKey="conversionRate" stroke="#f59e0b" strokeWidth={3} dot={false} name="CVR %" />
-                             </ComposedChart>
+                            </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>

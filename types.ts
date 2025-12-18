@@ -81,6 +81,7 @@ export interface DailyPerformance {
   clicks: number;
   totalOrders: number;
   paidOrders: number;
+  organicOrders: number;
   conversionRate: number;
   paidGlanceViews?: number;
   organicGlanceViews?: number;

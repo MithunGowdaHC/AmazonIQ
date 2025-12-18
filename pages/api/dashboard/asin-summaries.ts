@@ -124,16 +124,28 @@ export default async function handler(
         const summaries = Array.from(asinMap.values()).map((entry) => {
             const e = entry as AsinSummary;
 
-            e.organicSales = e.overallSales - e.paidSales;
-            e.organicOrders = e.totalOrders - e.paidOrders;
+            // Round all whole number fields (no decimals)
+            e.overallSales = Math.round(e.overallSales);
+            e.paidSales = Math.round(e.paidSales);
+            e.organicSales = Math.round(e.overallSales - e.paidSales);
+            e.totalOrders = Math.round(e.totalOrders);
+            e.paidOrders = Math.round(e.paidOrders);
+            e.organicOrders = Math.round(e.totalOrders - e.paidOrders);
+            e.spend = Math.round(e.spend);
+            e.impressions = Math.round(e.impressions);
+            e.clicks = Math.round(e.clicks);
+            e.glanceViews = Math.round(e.glanceViews);
+            e.paidGlanceViews = Math.round(e.paidGlanceViews);
+            e.organicGlanceViews = Math.round(e.organicGlanceViews);
 
-            e.roas = e.spend > 0 ? e.paidSales / e.spend : 0;
-            e.acos = e.paidSales > 0 ? (e.spend / e.paidSales) * 100 : 0;
-            e.ctr = e.impressions > 0 ? (e.clicks / e.impressions) * 100 : 0;
-            e.cpc = e.clicks > 0 ? e.spend / e.clicks : 0;
+            // Calculate ratios with max 2 decimals
+            e.roas = e.spend > 0 ? parseFloat((e.paidSales / e.spend).toFixed(2)) : 0;
+            e.acos = e.paidSales > 0 ? parseFloat(((e.spend / e.paidSales) * 100).toFixed(2)) : 0;
+            e.ctr = e.impressions > 0 ? parseFloat(((e.clicks / e.impressions) * 100).toFixed(2)) : 0;
+            e.cpc = e.clicks > 0 ? parseFloat((e.spend / e.clicks).toFixed(2)) : 0;
 
-            e.organicTrafficShare = e.glanceViews > 0 ? (e.organicGlanceViews / e.glanceViews) * 100 : 0;
-            e.paidTrafficShare = e.glanceViews > 0 ? (e.paidGlanceViews / e.glanceViews) * 100 : 0;
+            e.organicTrafficShare = e.glanceViews > 0 ? parseFloat(((e.organicGlanceViews / e.glanceViews) * 100).toFixed(2)) : 0;
+            e.paidTrafficShare = e.glanceViews > 0 ? parseFloat(((e.paidGlanceViews / e.glanceViews) * 100).toFixed(2)) : 0;
 
             return e;
         });

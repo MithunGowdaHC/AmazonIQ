@@ -2,9 +2,9 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/dashboard": "pages/dashboard.js",
-  "/api/dashboard/asin-summaries": "pages/api/dashboard/asin-summaries.js",
   "/analytics": "pages/analytics.js",
-  "/analytics/[asin]": "pages/analytics/[asin].js"
+  "/analytics/[asin]": "pages/analytics/[asin].js",
+  "/api/asin/daily-performance": "pages/api/asin/daily-performance.js",
+  "/api/dashboard/asin-summaries": "pages/api/dashboard/asin-summaries.js",
+  "/dashboard": "pages/dashboard.js"
 }

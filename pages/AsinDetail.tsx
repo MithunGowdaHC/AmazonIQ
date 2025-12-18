@@ -9,13 +9,13 @@ import { Card } from '../components/ui/Card';
 import { GoogleDateRangePicker } from '../components/ui/GoogleDateRangePicker';
 import { ArrowLeft, Calendar, Home, ChevronRight } from 'lucide-react';
 import { subDays, format } from 'date-fns';
-import { 
-    AreaChart, 
-    Area, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
     ResponsiveContainer,
     Legend,
     ComposedChart,
@@ -26,7 +26,7 @@ export const AsinDetail: React.FC = () => {
     const { selectedAccount } = useAuth();
     const router = useRouter();
     const asin = Array.isArray(router.query.asin) ? router.query.asin[0] : (router.query.asin as string | undefined);
-    
+
     const [summary, setSummary] = useState<AsinSummary | null>(null);
     const [dailyData, setDailyData] = useState<DailyPerformance[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,7 +39,7 @@ export const AsinDetail: React.FC = () => {
         if (selectedAccount && asin) {
             setLoading(true);
             const range = { startDate, endDate };
-            
+
             Promise.all([
                 getAsinDetails(asin, selectedAccount.id, range),
                 getDailyPerformance(asin, range)
@@ -68,7 +68,7 @@ export const AsinDetail: React.FC = () => {
             <p className="text-sm">Loading Intelligence for {asin}...</p>
         </div>
     );
-    
+
     if (!summary) return (
         <div className="p-8 text-center">
             <p className="text-slate-500">No data found for this ASIN in the selected date range.</p>
@@ -106,8 +106,8 @@ export const AsinDetail: React.FC = () => {
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <button 
-                            onClick={handleBack} 
+                        <button
+                            onClick={handleBack}
                             className="p-2 hover:bg-slate-800 rounded-full transition-colors border border-transparent hover:border-slate-700 text-slate-400"
                             title="Go Back"
                         >
@@ -123,7 +123,7 @@ export const AsinDetail: React.FC = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full md:w-auto">
                         <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
-                        <Link 
+                        <Link
                             href={`/asin/${asin}/datewise`}
                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-indigo-900/30 h-[42px] whitespace-nowrap"
                         >
@@ -136,12 +136,12 @@ export const AsinDetail: React.FC = () => {
 
             {/* Highlight Metrics Strip */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <MetricPill label="Overall Sales" value={`₹${summary.overallSales.toLocaleString()}`} />
-                <MetricPill label="Paid Sales" value={`₹${summary.paidSales.toLocaleString()}`} colorClass="text-indigo-400" />
-                <MetricPill label="Spend" value={`₹${summary.spend.toLocaleString()}`} />
+                <MetricPill label="Overall Sales" value={`₹${Math.round(summary.overallSales).toLocaleString()}`} />
+                <MetricPill label="Paid Sales" value={`₹${Math.round(summary.paidSales).toLocaleString()}`} colorClass="text-indigo-400" />
+                <MetricPill label="Spend" value={`₹${Math.round(summary.spend).toLocaleString()}`} />
                 <MetricPill label="ACOS" value={`${summary.acos.toFixed(1)}%`} colorClass={summary.acos > 40 ? 'text-rose-400' : 'text-emerald-400'} />
-                <MetricPill label="ROAS" value={summary.roas.toFixed(2)} />
-                <MetricPill label="Conv. Rate" value={`${(summary.glanceViews > 0 ? (summary.totalOrders / summary.glanceViews)*100 : 0).toFixed(2)}%`} colorClass="text-emerald-400" />
+                <MetricPill label="ROAS" value={summary.roas.toFixed(1)} />
+                <MetricPill label="Conv. Rate" value={`${(summary.glanceViews > 0 ? (summary.totalOrders / summary.glanceViews) * 100 : 0).toFixed(2)}%`} colorClass="text-emerald-400" />
             </div>
 
             {/* Main Charts */}
@@ -152,15 +152,15 @@ export const AsinDetail: React.FC = () => {
                             <ComposedChart data={dailyData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                                 <defs>
                                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid stroke="#1e293b" vertical={false} strokeDasharray="3 3" />
                                 <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                                <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v/1000}k`} tickLine={false} axisLine={false} />
-                                <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v/1000}k`} tickLine={false} axisLine={false} />
-                                <Tooltip 
+                                <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v / 1000}k`} tickLine={false} axisLine={false} />
+                                <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v / 1000}k`} tickLine={false} axisLine={false} />
+                                <Tooltip
                                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '8px' }}
                                     itemStyle={{ color: '#cbd5e1' }}
                                 />
@@ -177,7 +177,7 @@ export const AsinDetail: React.FC = () => {
                         {funnelData.map((item, idx) => {
                             const widthPercent = idx === 0 ? 100 : (funnelData[0].value > 0 ? (item.value / funnelData[0].value) * 100 : 0);
                             const visualWidth = Math.max(widthPercent, 10);
-                            
+
                             return (
                                 <div key={item.name} className="relative group">
                                     <div className="flex justify-between text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">
@@ -185,7 +185,7 @@ export const AsinDetail: React.FC = () => {
                                         <span className="text-slate-200">{item.value.toLocaleString()}</span>
                                     </div>
                                     <div className="h-4 bg-slate-800 rounded-full overflow-hidden relative">
-                                        <div 
+                                        <div
                                             className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(99,102,241,0.3)]"
                                             style={{ width: `${visualWidth}%`, backgroundColor: item.fill }}
                                         ></div>
@@ -201,15 +201,15 @@ export const AsinDetail: React.FC = () => {
                 <Card title="Traffic Source: Paid vs Organic">
                     <div className="h-64 mt-4">
                         <ResponsiveContainer width="100%" height="100%">
-                             <AreaChart data={dailyData} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                            <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                     </linearGradient>
                                     <linearGradient id="colorOrg" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid stroke="#1e293b" vertical={false} />
@@ -219,21 +219,21 @@ export const AsinDetail: React.FC = () => {
                                 <Legend />
                                 <Area type="monotone" dataKey="organicSales" stackId="1" stroke="#10b981" fill="url(#colorOrg)" name="Organic Sales" />
                                 <Area type="monotone" dataKey="paidSales" stackId="1" stroke="#6366f1" fill="url(#colorPaid)" name="Paid Sales" />
-                             </AreaChart>
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
 
-                 <Card title="Conversion Rate Trend">
+                <Card title="Conversion Rate Trend">
                     <div className="h-64 mt-4">
                         <ResponsiveContainer width="100%" height="100%">
-                             <ComposedChart data={dailyData} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                            <ComposedChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <CartesianGrid stroke="#1e293b" vertical={false} />
                                 <XAxis dataKey="date" tickFormatter={(d) => d.slice(8)} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                                 <YAxis stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v}%`} tickLine={false} axisLine={false} />
                                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9', borderRadius: '8px' }} />
                                 <Line type="monotone" dataKey="conversionRate" stroke="#f59e0b" strokeWidth={3} dot={false} name="CVR %" />
-                             </ComposedChart>
+                            </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>

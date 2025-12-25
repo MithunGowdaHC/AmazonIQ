@@ -1,2 +1,3 @@
-import AsinAnalytics from '../../AsinAnalytics';
+import AsinAnalytics from '../../asinAnalytics';
 export default AsinAnalytics;
+

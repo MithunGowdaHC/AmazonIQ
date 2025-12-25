@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { GoogleDateRangePicker } from '../components/ui/GoogleDateRangePicker';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { subDays, format } from 'date-fns';
+import { subDays, subMonths, subYears, format } from 'date-fns';
 import {
     ArrowRight,
     TrendingUp,
@@ -145,6 +145,85 @@ export const Dashboard: React.FC = () => {
 
     // Sorting State
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'overallSales', direction: 'desc' });
+
+    // Compare Modal State
+    const [showCompareModal, setShowCompareModal] = useState(false);
+    const [comparePeriod2, setComparePeriod2] = useState<{ type: string; start: string; end: string } | null>(null);
+    const [comparePeriod3, setComparePeriod3] = useState<{ type: string; start: string; end: string } | null>(null);
+    const [showPeriod3, setShowPeriod3] = useState(false);
+    const [comparisonData, setComparisonData] = useState<{ period1?: any; period2?: any; period3?: any }>({});
+    const [isComparing, setIsComparing] = useState(false);
+
+    // Calculate comparison period dates
+    const calculatePeriodDates = (type: string): { start: string; end: string } => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        switch (type) {
+            case 'yesterday':
+                const yesterday = subDays(new Date(), 1);
+                return { start: format(yesterday, 'yyyy-MM-dd'), end: format(yesterday, 'yyyy-MM-dd') };
+            case 'lastMonth':
+                return {
+                    start: format(subMonths(start, 1), 'yyyy-MM-dd'),
+                    end: format(subMonths(end, 1), 'yyyy-MM-dd')
+                };
+            case 'lastYear':
+                return {
+                    start: format(subYears(start, 1), 'yyyy-MM-dd'),
+                    end: format(subYears(end, 1), 'yyyy-MM-dd')
+                };
+            default:
+                return { start: '', end: '' };
+        }
+    };
+
+    // Handle preset selection
+    const handlePresetSelect = (period: 2 | 3, type: string) => {
+        const dates = calculatePeriodDates(type);
+        if (period === 2) {
+            setComparePeriod2({ type, ...dates });
+        } else {
+            setComparePeriod3({ type, ...dates });
+        }
+    };
+
+    // Handle compare action
+    const handleCompare = async () => {
+        if (!comparePeriod2) return;
+
+        setIsComparing(true);
+        try {
+            const periods = [
+                { startDate, endDate, label: 'Current Period' },
+                { startDate: comparePeriod2.start, endDate: comparePeriod2.end, label: 'Period 2' }
+            ];
+
+            if (comparePeriod3) {
+                periods.push({ startDate: comparePeriod3.start, endDate: comparePeriod3.end, label: 'Period 3' });
+            }
+
+            const response = await fetch('/api/dashboard/compare', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ periods })
+            });
+
+            if (response.ok) {
+                const results = await response.json();
+                setComparisonData({
+                    period1: results[0],
+                    period2: results[1],
+                    period3: results[2] || null
+                });
+                setShowCompareModal(false);
+            }
+        } catch (error) {
+            console.error('Comparison failed:', error);
+        } finally {
+            setIsComparing(false);
+        }
+    };
 
     // Handle incoming date filters
     // Note: React Router `location.state` logic removed for Next.js migration.
@@ -290,6 +369,15 @@ export const Dashboard: React.FC = () => {
     const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
     const avgCvr = totalClicks > 0 ? (totalPaidOrders / totalClicks) * 100 : 0;
 
+    // Seller Central Aggregations
+    const totalScSales = data.reduce((sum, i) => sum + (i.scSales || 0), 0);
+    const totalScUnits = data.reduce((sum, i) => sum + (i.scOrders || 0), 0);
+    const totalSessions = data.reduce((sum, i) => sum + (i.sessions || 0), 0);
+    const totalPageViews = data.reduce((sum, i) => sum + (i.pageViews || 0), 0);
+    const avgRefundRate = data.length > 0
+        ? data.filter(i => (i.refundRate || 0) > 0).reduce((sum, i) => sum + (i.refundRate || 0), 0) / data.filter(i => (i.refundRate || 0) > 0).length
+        : 0;
+
     // Trends
     const mockTrendSales = data.length > 0 ? data[0].trends?.overallSales : 0;
     const mockTrendSpend = data.length > 0 ? data[0].trends?.spend : 0;
@@ -297,6 +385,19 @@ export const Dashboard: React.FC = () => {
     const mockTrendGV = data.length > 0 ? data[0].trends?.glanceViews : 0;
     const mockTrendCPC = data.length > 0 ? data[0].trends?.cpc : 0;
     const mockTrendCVR = data.length > 0 ? data[0].trends?.conversionRate : 0;
+
+    // KPI Section Component for grouped layout
+    const KPISection: React.FC<{ title: string; color: string; children: React.ReactNode }> = ({ title, color, children }) => (
+        <div className="space-y-3">
+            <div className="flex items-center gap-2">
+                <div className={`w-1.5 h-4 rounded-full ${color}`}></div>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {children}
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-8">
@@ -308,8 +409,17 @@ export const Dashboard: React.FC = () => {
                         Analyzing <span className="text-indigo-400 font-medium">{selectedAccount?.name}</span> data
                     </p>
                 </div>
-                <div className="w-full lg:w-auto">
+                <div className="flex items-center gap-3 w-full lg:w-auto">
                     <GoogleDateRangePicker startDate={startDate} endDate={endDate} onChange={handleDateChange} />
+                    <button
+                        onClick={() => setShowCompareModal(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-indigo-500/20"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 3h5v5" /><path d="M8 3H3v5" /><path d="M21 3l-7 7" /><path d="M3 3l7 7" /><path d="M16 21h5v-5" /><path d="M8 21H3v-5" /><path d="M21 21l-7-7" /><path d="M3 21l7-7" />
+                        </svg>
+                        Compare
+                    </button>
                 </div>
             </div>
 
@@ -330,16 +440,197 @@ export const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    {/* KPI Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                        <KPICard title="Spends" value={formatCurrency(totalSpend)} trend={mockTrendSpend} isInverse={true} />
-                        <KPICard title="Sales" value={formatCurrency(totalPaidSales)} trend={mockTrendSpend} isInverse={true} />
+                    {/* Comparison Results - 3 Grouped Blocks */}
+                    {comparisonData.period1 && comparisonData.period2 && (
+                        <div className="space-y-4">
+                            {/* Comparison Header */}
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-100">Period Comparison</h3>
+                                    <p className="text-sm text-slate-400 mt-1">
+                                        <span className="text-indigo-400">{comparisonData.period1.startDate} → {comparisonData.period1.endDate}</span>
+                                        <span className="mx-2 text-slate-600">vs</span>
+                                        <span className="text-emerald-400">{comparisonData.period2.startDate} → {comparisonData.period2.endDate}</span>
+                                        {comparisonData.period3 && (
+                                            <>
+                                                <span className="mx-2 text-slate-600">vs</span>
+                                                <span className="text-amber-400">{comparisonData.period3.startDate} → {comparisonData.period3.endDate}</span>
+                                            </>
+                                        )}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setComparisonData({})}
+                                    className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                                >
+                                    Clear Comparison
+                                </button>
+                            </div>
 
-                        <KPICard title="Overall Sales" value={formatCurrency(overallSales)} trend={mockTrendSales} />
-                        <KPICard title="RoAS" value={avgRoas.toFixed(1)} trend={mockTrendRoas} />
-                        <KPICard title="Glance Views" value={formatNumber(totalGV)} trend={mockTrendGV} />
-                        <KPICard title="CPC" value={`₹${avgCpc.toFixed(1)}`} trend={mockTrendCPC} isInverse={true} />
-                        {/* <KPICard title="CVR" value={`${avgCvr.toFixed(2)}%`} trend={mockTrendCVR} /> */}
+                            {/* 3 Comparison Blocks */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                {/* Block 1: Advertising Metrics */}
+                                <div className="bg-slate-900/50 rounded-xl border border-slate-800/50 p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-1.5 h-4 rounded-full bg-rose-500"></div>
+                                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Advertising</h4>
+                                    </div>
+                                    {/* Column Headers */}
+                                    <div className="flex items-center justify-between text-[10px] text-slate-600 mb-2 pb-1 border-b border-slate-800">
+                                        <span>Metric</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-16 text-right text-indigo-400">Current</span>
+                                            <span className="w-16 text-right text-emerald-400">Compare</span>
+                                            <span className="w-10 text-right">Δ%</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {[
+                                            { label: 'Spends', key: 'spend', format: 'currency', inverse: true },
+                                            { label: 'Paid Sales', key: 'paidSales', format: 'currency' },
+                                            { label: 'Paid Orders', key: 'paidOrders', format: 'number' },
+                                            { label: 'Impressions', key: 'impressions', format: 'number' },
+                                            { label: 'Clicks', key: 'clicks', format: 'number' },
+                                            { label: 'RoAS', key: 'roas', format: 'decimal' },
+                                            { label: 'CVR', key: 'cvr', format: 'percent' },
+                                            { label: 'CTR', key: 'ctr', format: 'percent' },
+                                            { label: 'CPC', key: 'cpc', format: 'currency', inverse: true },
+                                        ].map(({ label, key, format, inverse }) => {
+                                            const p1 = comparisonData.period1[key] || 0;
+                                            const p2 = comparisonData.period2[key] || 0;
+                                            const change = p2 !== 0 ? ((p1 - p2) / p2 * 100) : 0;
+                                            const isPositive = inverse ? change < 0 : change > 0;
+                                            const fmt = (v: number) => format === 'currency' ? `₹${Math.round(v).toLocaleString()}` : format === 'percent' ? `${v.toFixed(1)}%` : format === 'decimal' ? v.toFixed(2) : Math.round(v).toLocaleString();
+                                            return (
+                                                <div key={key} className="flex items-center justify-between text-xs">
+                                                    <span className="text-slate-500">{label}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-16 text-right text-slate-300 font-medium">{fmt(p1)}</span>
+                                                        <span className="w-16 text-right text-slate-500">{fmt(p2)}</span>
+                                                        <span className={`w-10 text-right font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                            {change > 0 ? '+' : ''}{change.toFixed(0)}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Block 2: Seller Central Metrics */}
+                                <div className="bg-slate-900/50 rounded-xl border border-slate-800/50 p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-1.5 h-4 rounded-full bg-amber-500"></div>
+                                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Seller Central</h4>
+                                    </div>
+                                    {/* Column Headers */}
+                                    <div className="flex items-center justify-between text-[10px] text-slate-600 mb-2 pb-1 border-b border-slate-800">
+                                        <span>Metric</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-16 text-right text-indigo-400">Current</span>
+                                            <span className="w-16 text-right text-emerald-400">Compare</span>
+                                            <span className="w-10 text-right">Δ%</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {[
+                                            { label: 'Overall Sales (SC)', key: 'scSales', format: 'currency' },
+                                            { label: 'Overall Units', key: 'scOrders', format: 'number' },
+                                            { label: 'Sessions', key: 'sessions', format: 'number' },
+                                            { label: 'Page Views', key: 'pageViews', format: 'number' },
+                                            { label: 'Refund Rate', key: 'refundRate', format: 'percent', inverse: true },
+                                        ].map(({ label, key, format, inverse }) => {
+                                            const p1 = comparisonData.period1[key] || 0;
+                                            const p2 = comparisonData.period2[key] || 0;
+                                            const change = p2 !== 0 ? ((p1 - p2) / p2 * 100) : 0;
+                                            const isPositive = inverse ? change < 0 : change > 0;
+                                            const fmt = (v: number) => format === 'currency' ? `₹${Math.round(v).toLocaleString()}` : format === 'percent' ? `${v.toFixed(1)}%` : Math.round(v).toLocaleString();
+                                            return (
+                                                <div key={key} className="flex items-center justify-between text-xs">
+                                                    <span className="text-slate-500">{label}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-16 text-right text-slate-300 font-medium">{fmt(p1)}</span>
+                                                        <span className="w-16 text-right text-slate-500">{fmt(p2)}</span>
+                                                        <span className={`w-10 text-right font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                            {change > 0 ? '+' : ''}{change.toFixed(0)}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Block 3: Product Insights Metrics */}
+                                <div className="bg-slate-900/50 rounded-xl border border-slate-800/50 p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-1.5 h-4 rounded-full bg-emerald-500"></div>
+                                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Amazon PI</h4>
+                                    </div>
+                                    {/* Column Headers */}
+                                    <div className="flex items-center justify-between text-[10px] text-slate-600 mb-2 pb-1 border-b border-slate-800">
+                                        <span>Metric</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-16 text-right text-indigo-400">Current</span>
+                                            <span className="w-16 text-right text-emerald-400">Compare</span>
+                                            <span className="w-10 text-right">Δ%</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {[
+                                            { label: 'Glance Views', key: 'glanceViews', format: 'number' },
+                                            { label: 'Ad Share', key: 'adShare', format: 'percent' },
+                                            { label: 'Organic Share', key: 'organicShare', format: 'percent' },
+                                            { label: 'Overall Sales (PI)', key: 'overallSales', format: 'currency' },
+                                        ].map(({ label, key, format }) => {
+                                            const p1 = comparisonData.period1[key] || 0;
+                                            const p2 = comparisonData.period2[key] || 0;
+                                            const change = p2 !== 0 ? ((p1 - p2) / p2 * 100) : 0;
+                                            const isPositive = change > 0;
+                                            const fmt = (v: number) => format === 'currency' ? `₹${Math.round(v).toLocaleString()}` : format === 'percent' ? `${v.toFixed(1)}%` : Math.round(v).toLocaleString();
+                                            return (
+                                                <div key={key} className="flex items-center justify-between text-xs">
+                                                    <span className="text-slate-500">{label}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-16 text-right text-slate-300 font-medium">{fmt(p1)}</span>
+                                                        <span className="w-16 text-right text-slate-500">{fmt(p2)}</span>
+                                                        <span className={`w-10 text-right font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                            {change > 0 ? '+' : ''}{change.toFixed(0)}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Grouped KPI Sections */}
+                    <div className="space-y-6">
+                        {/* Advertising Metrics */}
+                        <KPISection title="Advertising Metrics" color="bg-rose-500">
+                            <KPICard title="Spends" value={formatCurrency(totalSpend)} trend={mockTrendSpend} isInverse={true} />
+                            <KPICard title="Paid Sales" value={formatCurrency(totalPaidSales)} trend={mockTrendSpend} />
+                            <KPICard title="RoAS" value={avgRoas.toFixed(1)} trend={mockTrendRoas} />
+                            <KPICard title="CPC" value={`₹${avgCpc.toFixed(1)}`} trend={mockTrendCPC} isInverse={true} />
+                        </KPISection>
+
+                        {/* Traffic Metrics */}
+                        <KPISection title="Traffic Metrics" color="bg-emerald-500">
+                            <KPICard title="Glance Views" value={formatNumber(totalGV)} trend={mockTrendGV} subValue="Product Insights" />
+                            <KPICard title="Sessions" value={formatNumber(totalSessions)} subValue="Seller Central" />
+                            <KPICard title="Page Views" value={formatNumber(totalPageViews)} subValue="Seller Central" />
+                        </KPISection>
+
+                        {/* Sales Metrics */}
+                        <KPISection title="Sales Metrics" color="bg-amber-500">
+                            <KPICard title="Overall Sales (PI)" value={formatCurrency(overallSales)} trend={mockTrendSales} subValue="Product Insights" />
+                            <KPICard title="Overall Sales (SC)" value={formatCurrency(totalScSales)} subValue="Seller Central" />
+                            <KPICard title="Units Ordered" value={formatNumber(totalScUnits)} subValue="Seller Central" />
+                            <KPICard title="Refund Rate" value={`${avgRefundRate.toFixed(1)}%`} isInverse={true} subValue="Seller Central" />
+                        </KPISection>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -429,6 +720,10 @@ export const Dashboard: React.FC = () => {
                                         <HeaderCell label="Idx GV" sortKey="glanceViews" />
                                         <HeaderCell label="Ad GV" sortKey="paidGlanceViews" />
                                         <HeaderCell label="Org GV" sortKey="organicGlanceViews" />
+                                        {/* Seller Central Columns */}
+                                        <th className="px-4 py-4 text-right text-amber-500 border-l border-slate-800">SC Sales</th>
+                                        <th className="px-4 py-4 text-right text-amber-500">SC Units</th>
+                                        <th className="px-4 py-4 text-right text-amber-500">Refund %</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/50">
@@ -471,6 +766,10 @@ export const Dashboard: React.FC = () => {
                                                     <div>{row.organicGlanceViews?.toLocaleString() || 0}</div>
                                                     <div className="text-[10px] text-slate-600 font-mono">({orgShare.toFixed(0)}%)</div>
                                                 </td>
+                                                {/* Seller Central Data */}
+                                                <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{(row.scSales || 0).toLocaleString()}</td>
+                                                <td className="px-4 py-3.5 text-right text-amber-400">{(row.scOrders || 0).toLocaleString()}</td>
+                                                <td className="px-4 py-3.5 text-right text-amber-400">{(row.refundRate || 0).toFixed(1)}%</td>
                                             </tr>
                                         );
                                     })}
@@ -479,6 +778,159 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </Card>
                 </>
+            )}
+
+            {/* Compare Modal */}
+            {showCompareModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-100">Compare Periods</h2>
+                                <p className="text-sm text-slate-400 mt-1">Select up to 3 periods to compare performance metrics</p>
+                            </div>
+                            <button
+                                onClick={() => setShowCompareModal(false)}
+                                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 space-y-6">
+                            {/* Period 1 - Current (Fixed) */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+                                    <span className="text-sm font-medium text-slate-300">Period 1 (Current)</span>
+                                </div>
+                                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                                    <p className="text-sm text-slate-200">{startDate} to {endDate}</p>
+                                    <p className="text-xs text-slate-500 mt-1">Currently selected range</p>
+                                </div>
+                            </div>
+
+                            {/* Period 2 */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                    <span className="text-sm font-medium text-slate-300">Period 2 (Comparison)</span>
+                                    {comparePeriod2 && (
+                                        <span className="text-xs text-emerald-400 ml-2">
+                                            {comparePeriod2.start} to {comparePeriod2.end}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => handlePresetSelect(2, 'yesterday')}
+                                        className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left ${comparePeriod2?.type === 'yesterday' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-emerald-500/50'}`}
+                                    >
+                                        <span className="block font-medium">Yesterday</span>
+                                        <span className="block text-xs text-slate-500 mt-1">Previous day's data</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handlePresetSelect(2, 'lastMonth')}
+                                        className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left ${comparePeriod2?.type === 'lastMonth' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-emerald-500/50'}`}
+                                    >
+                                        <span className="block font-medium">Same Period Last Month</span>
+                                        <span className="block text-xs text-slate-500 mt-1">Same days, previous month</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handlePresetSelect(2, 'lastYear')}
+                                        className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left ${comparePeriod2?.type === 'lastYear' ? 'bg-emerald-600/20 border-emerald-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-emerald-500/50'}`}
+                                    >
+                                        <span className="block font-medium">Same Period Last Year</span>
+                                        <span className="block text-xs text-slate-500 mt-1">Same days, previous year</span>
+                                    </button>
+                                    <button className="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-slate-200 transition-colors border border-slate-700 hover:border-emerald-500/50 text-left">
+                                        <span className="block font-medium">Custom Range</span>
+                                        <span className="block text-xs text-slate-500 mt-1">Select specific dates</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Period 3 (Optional) */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                                        <span className="text-sm font-medium text-slate-300">Period 3 (Optional)</span>
+                                        {comparePeriod3 && (
+                                            <span className="text-xs text-amber-400 ml-2">
+                                                {comparePeriod3.start} to {comparePeriod3.end}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {!showPeriod3 ? (
+                                        <button
+                                            onClick={() => setShowPeriod3(true)}
+                                            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                                        >
+                                            + Add third period
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => { setShowPeriod3(false); setComparePeriod3(null); }}
+                                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+                                {showPeriod3 && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => handlePresetSelect(3, 'yesterday')}
+                                            className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left ${comparePeriod3?.type === 'yesterday' ? 'bg-amber-600/20 border-amber-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-amber-500/50'}`}
+                                        >
+                                            <span className="block font-medium">Yesterday</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handlePresetSelect(3, 'lastMonth')}
+                                            className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left ${comparePeriod3?.type === 'lastMonth' ? 'bg-amber-600/20 border-amber-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-amber-500/50'}`}
+                                        >
+                                            <span className="block font-medium">Same Period Last Month</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handlePresetSelect(3, 'lastYear')}
+                                            className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left ${comparePeriod3?.type === 'lastYear' ? 'bg-amber-600/20 border-amber-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-amber-500/50'}`}
+                                        >
+                                            <span className="block font-medium">Same Period Last Year</span>
+                                        </button>
+                                        <button className="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-slate-200 transition-colors border border-slate-700 hover:border-amber-500/50 text-left">
+                                            <span className="block font-medium">Custom Range</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-800">
+                            <button
+                                onClick={() => setShowCompareModal(false)}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCompare}
+                                disabled={!comparePeriod2 || isComparing}
+                                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+                            >
+                                {isComparing && (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                )}
+                                {isComparing ? 'Comparing...' : 'Compare Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

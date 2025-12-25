@@ -1,0 +1,106 @@
+=== ALL TABLES ===
+- pi_gv_data
+- seller_central_business_report
+- ads_data
+- pi_sales_data
+- user_accounts
+- user_account_access
+
+
+=== SELLER CENTRAL TABLE COLUMNS ===
+date: date
+parent_asin: text
+child_asin: text
+title: text
+sku: text
+sessions_mobile_app: double precision
+sessions_mobile_app_b2b: double precision
+sessions_browser: double precision
+sessions_browser_b2b: double precision
+sessions_total: double precision
+sessions_total_b2b: double precision
+session_percentage_mobile_app: double precision
+session_percentage_mobile_app_b2b: double precision
+session_percentage_browser: double precision
+session_percentage_browser_b2b: double precision
+session_percentage_total: double precision
+session_percentage_total_b2b: double precision
+page_views_mobile_app: double precision
+page_views_mobile_app_b2b: double precision
+page_views_browser: double precision
+page_views_browser_b2b: double precision
+page_views_total: double precision
+page_views_total_b2b: double precision
+page_views_percentage_mobile_app: double precision
+page_views_percentage_mobile_app_b2b: double precision
+page_views_percentage_browser: double precision
+page_views_percentage_browser_b2b: double precision
+page_views_percentage_total: double precision
+page_views_percentage_total_b2b: double precision
+featured_offer_percentage: double precision
+featured_offer_percentage_b2b: double precision
+units_ordered: double precision
+units_ordered_b2b: double precision
+unit_session_percentage: double precision
+unit_session_percentage_b2b: double precision
+ordered_product_sales: double precision
+ordered_product_sales_b2b: double precision
+total_order_items: double precision
+total_order_items_b2b: double precision
+units_refunded: double precision
+units_refunded_b2b: double precision
+refund_rate: double precision
+refund_rate_b2b: double precision
+
+
+=== SAMPLE DATA (1 ROW) ===
+[
+  {
+    "date": "2025-12-01T00:00:00.000Z",
+    "parent_asin": "B07YRKMP87",
+    "child_asin": "B07YRKMP87",
+    "title": "Stahl Stainless Steel Xpress Cooker Triply Pressure Cooker Baby, 1 L, Induction Cooker, Outer Lid Pressure Cooker, Induction & Gas Stove Compatible, Manufacturer Warranty, Silver",
+    "sku": "9261_FBA",
+    "sessions_mobile_app": 1976,
+    "sessions_mobile_app_b2b": 18,
+    "sessions_browser": 216,
+    "sessions_browser_b2b": 7,
+    "sessions_total": 2192,
+    "sessions_total_b2b": 25,
+    "session_percentage_mobile_app": 0.1545,
+    "session_percentage_mobile_app_b2b": 0.0786,
+    "session_percentage_browser": 0.09300000000000001,
+    "session_percentage_browser_b2b": 0.1273,
+    "session_percentage_total": 0.1451,
+    "session_percentage_total_b2b": 0.08800000000000001,
+    "page_views_mobile_app": 2301,
+    "page_views_mobile_app_b2b": 21,
+    "page_views_browser": 258,
+    "page_views_browser_b2b": 13,
+    "page_views_total": 2559,
+    "page_views_total_b2b": 34,
+    "page_views_percentage_mobile_app": 0.1366,
+    "page_views_percentage_mobile_app_b2b": 0.0654,
+    "page_views_percentage_browser": 0.08929999999999999,
+    "page_views_percentage_browser_b2b": 0.1605,
+    "page_views_percentage_total": 0.1297,
+    "page_views_percentage_total_b2b": 0.08460000000000001,
+    "featured_offer_percentage": 0.9506,
+    "featured_offer_percentage_b2b": 1,
+    "units_ordered": 10,
+    "units_ordered_b2b": 1,
+    "unit_session_percentage": 0.0046,
+    "unit_session_percentage_b2b": 0.04,
+    "ordered_product_sales": 25390,
+    "ordered_product_sales_b2b": 2539,
+    "total_order_items": 10,
+    "total_order_items_b2b": 1,
+    "units_refunded": 3,
+    "units_refunded_b2b": 0,
+    "refund_rate": 0.3,
+    "refund_rate_b2b": 0
+  }
+]
+
+=== ROW COUNT ===
+Total rows: 321

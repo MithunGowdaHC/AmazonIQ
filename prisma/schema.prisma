@@ -57,3 +57,67 @@ model PiSalesData {
 
   @@map("pi_sales_data")
 }
+
+model SellerCentralBusinessReport {
+  // Composite key - date + child_asin for uniqueness
+  date                           DateTime @db.Date
+  parentAsin                     String?  @map("parent_asin")
+  childAsin                      String   @map("child_asin")
+  title                          String?
+  sku                            String?
+
+  // Sessions
+  sessionsMobileApp              Float?   @map("sessions_mobile_app")
+  sessionsMobileAppB2b           Float?   @map("sessions_mobile_app_b2b")
+  sessionsBrowser                Float?   @map("sessions_browser")
+  sessionsBrowserB2b             Float?   @map("sessions_browser_b2b")
+  sessionsTotal                  Float?   @map("sessions_total")
+  sessionsTotalB2b               Float?   @map("sessions_total_b2b")
+
+  // Session Percentages
+  sessionPercentageMobileApp     Float?   @map("session_percentage_mobile_app")
+  sessionPercentageMobileAppB2b  Float?   @map("session_percentage_mobile_app_b2b")
+  sessionPercentageBrowser       Float?   @map("session_percentage_browser")
+  sessionPercentageBrowserB2b    Float?   @map("session_percentage_browser_b2b")
+  sessionPercentageTotal         Float?   @map("session_percentage_total")
+  sessionPercentageTotalB2b      Float?   @map("session_percentage_total_b2b")
+
+  // Page Views
+  pageViewsMobileApp             Float?   @map("page_views_mobile_app")
+  pageViewsMobileAppB2b          Float?   @map("page_views_mobile_app_b2b")
+  pageViewsBrowser               Float?   @map("page_views_browser")
+  pageViewsBrowserB2b            Float?   @map("page_views_browser_b2b")
+  pageViewsTotal                 Float?   @map("page_views_total")
+  pageViewsTotalB2b              Float?   @map("page_views_total_b2b")
+
+  // Page View Percentages
+  pageViewsPercentageMobileApp    Float?  @map("page_views_percentage_mobile_app")
+  pageViewsPercentageMobileAppB2b Float?  @map("page_views_percentage_mobile_app_b2b")
+  pageViewsPercentageBrowser      Float?  @map("page_views_percentage_browser")
+  pageViewsPercentageBrowserB2b   Float?  @map("page_views_percentage_browser_b2b")
+  pageViewsPercentageTotal        Float?  @map("page_views_percentage_total")
+  pageViewsPercentageTotalB2b     Float?  @map("page_views_percentage_total_b2b")
+
+  // Buy Box (Featured Offer)
+  featuredOfferPercentage        Float?   @map("featured_offer_percentage")
+  featuredOfferPercentageB2b     Float?   @map("featured_offer_percentage_b2b")
+
+  // Orders & Sales
+  unitsOrdered                   Float?   @map("units_ordered")
+  unitsOrderedB2b                Float?   @map("units_ordered_b2b")
+  unitSessionPercentage          Float?   @map("unit_session_percentage")
+  unitSessionPercentageB2b       Float?   @map("unit_session_percentage_b2b")
+  orderedProductSales            Float?   @map("ordered_product_sales")
+  orderedProductSalesB2b         Float?   @map("ordered_product_sales_b2b")
+  totalOrderItems                Float?   @map("total_order_items")
+  totalOrderItemsB2b             Float?   @map("total_order_items_b2b")
+
+  // Refunds
+  unitsRefunded                  Float?   @map("units_refunded")
+  unitsRefundedB2b               Float?   @map("units_refunded_b2b")
+  refundRate                     Float?   @map("refund_rate")
+  refundRateB2b                  Float?   @map("refund_rate_b2b")
+
+  @@id([date, childAsin])
+  @@map("seller_central_business_report")
+}

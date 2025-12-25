@@ -1,2 +1,3 @@
-import AccountHistory from './AccountHistory';
+import AccountHistory from './accountHistory';
 export default AccountHistory;
+

@@ -58,6 +58,15 @@ export interface AsinSummary extends AsinMetadata {
   organicTrafficShare: number; // percentage
   paidTrafficShare: number; // percentage
 
+  // Seller Central Metrics (from Business Report)
+  sessions?: number;           // Total sessions from SC
+  pageViews?: number;          // Total page views from SC
+  scSales?: number;            // Ordered Product Sales from SC
+  scOrders?: number;           // Units Ordered from SC  
+  buyBoxPercentage?: number;   // Featured Offer % from SC
+  scCvr?: number;              // Unit Session Percentage from SC (CVR)
+  refundRate?: number;         // Refund Rate from SC
+
   // Trends (Percentage change vs previous period)
   trends?: {
     spend: number;

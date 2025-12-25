@@ -21,8 +21,8 @@ export default async function handler(
             };
         }
 
-        // Fetch grouped data by ASIN
-        const [salesByAsin, adsByAsin, trafficByAsin] = await Promise.all([
+        // Fetch grouped data by ASIN from all 4 data sources
+        const [salesByAsin, adsByAsin, trafficByAsin, scByAsin] = await Promise.all([
             prisma.piSalesData.groupBy({
                 by: ['asin', 'itemName', 'brand', 'category'],
                 _sum: {
@@ -51,6 +51,22 @@ export default async function handler(
                 },
                 where: dateFilter,
             }),
+            // Seller Central data - using raw SQL for groupBy flexibility
+            prisma.$queryRawUnsafe(`
+                SELECT 
+                    child_asin as asin,
+                    SUM(sessions_total) as sessions,
+                    SUM(page_views_total) as page_views,
+                    SUM(ordered_product_sales) as sc_sales,
+                    SUM(units_ordered) as sc_orders,
+                    AVG(featured_offer_percentage) as buy_box_pct,
+                    AVG(unit_session_percentage) as sc_cvr,
+                    AVG(refund_rate) as refund_rate
+                FROM seller_central_business_report
+                WHERE date >= $1 AND date <= $2
+                GROUP BY child_asin
+            `, startDate ? new Date(startDate as string) : new Date('2000-01-01'),
+                endDate ? new Date(endDate as string) : new Date()),
         ]);
 
         // Merge data
@@ -84,6 +100,14 @@ export default async function handler(
                     cpc: 0,
                     organicTrafficShare: 0,
                     paidTrafficShare: 0,
+                    // Seller Central fields
+                    sessions: 0,
+                    pageViews: 0,
+                    scSales: 0,
+                    scOrders: 0,
+                    buyBoxPercentage: 0,
+                    scCvr: 0,
+                    refundRate: 0,
                 });
             }
             return asinMap.get(asin)!;
@@ -118,6 +142,19 @@ export default async function handler(
             entry.glanceViews = Number(item._sum.indexedGlanceViews || 0);
             entry.paidGlanceViews = Number(item._sum.adNumber || 0);
             entry.organicGlanceViews = Number(item._sum.organicNumber || 0);
+        });
+
+        // Process Seller Central Data
+        (scByAsin as any[]).forEach((item: any) => {
+            if (!item.asin) return;
+            const entry = getEntry(item.asin);
+            entry.sessions = Math.round(Number(item.sessions || 0));
+            entry.pageViews = Math.round(Number(item.page_views || 0));
+            entry.scSales = Math.round(Number(item.sc_sales || 0));
+            entry.scOrders = Math.round(Number(item.sc_orders || 0));
+            entry.buyBoxPercentage = parseFloat((Number(item.buy_box_pct || 0) * 100).toFixed(1));
+            entry.scCvr = parseFloat((Number(item.sc_cvr || 0) * 100).toFixed(2));
+            entry.refundRate = parseFloat((Number(item.refund_rate || 0) * 100).toFixed(1));
         });
 
         // Calculate Derived Metrics

@@ -180,11 +180,33 @@ export const Dashboard: React.FC = () => {
 
     // Handle preset selection
     const handlePresetSelect = (period: 2 | 3, type: string) => {
-        const dates = calculatePeriodDates(type);
-        if (period === 2) {
-            setComparePeriod2({ type, ...dates });
+        if (type === 'custom') {
+            // Initialize with current dates if switching to custom, or keep existing if already custom
+            const current = period === 2 ? comparePeriod2 : comparePeriod3;
+            const start = current?.start || startDate;
+            const end = current?.end || endDate;
+
+            if (period === 2) {
+                setComparePeriod2({ type, start, end });
+            } else {
+                setComparePeriod3({ type, start, end });
+            }
         } else {
-            setComparePeriod3({ type, ...dates });
+            const dates = calculatePeriodDates(type);
+            if (period === 2) {
+                setComparePeriod2({ type, ...dates });
+            } else {
+                setComparePeriod3({ type, ...dates });
+            }
+        }
+    };
+
+    // Handle custom date change
+    const handleCustomDateChange = (period: 2 | 3, start: string, end: string) => {
+        if (period === 2) {
+            setComparePeriod2({ type: 'custom', start, end });
+        } else {
+            setComparePeriod3({ type: 'custom', start, end });
         }
     };
 
@@ -847,11 +869,24 @@ export const Dashboard: React.FC = () => {
                                         <span className="block font-medium">Same Period Last Year</span>
                                         <span className="block text-xs text-slate-500 mt-1">Same days, previous year</span>
                                     </button>
-                                    <button className="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-slate-200 transition-colors border border-slate-700 hover:border-emerald-500/50 text-left">
+                                    <button
+                                        onClick={() => handlePresetSelect(2, 'custom')}
+                                        className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left flex flex-col justify-center ${comparePeriod2?.type === 'custom' ? 'bg-indigo-600/20 border-indigo-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-indigo-500/50'}`}
+                                    >
                                         <span className="block font-medium">Custom Range</span>
                                         <span className="block text-xs text-slate-500 mt-1">Select specific dates</span>
                                     </button>
                                 </div>
+                                {comparePeriod2?.type === 'custom' && (
+                                    <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-indigo-500/30">
+                                        <p className="text-xs font-bold text-indigo-400 uppercase mb-2">Select Custom Range</p>
+                                        <GoogleDateRangePicker
+                                            startDate={comparePeriod2.start}
+                                            endDate={comparePeriod2.end}
+                                            onChange={(s, e) => handleCustomDateChange(2, s, e)}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Period 3 (Optional) */}
@@ -902,9 +937,22 @@ export const Dashboard: React.FC = () => {
                                         >
                                             <span className="block font-medium">Same Period Last Year</span>
                                         </button>
-                                        <button className="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-slate-200 transition-colors border border-slate-700 hover:border-amber-500/50 text-left">
+                                        <button
+                                            onClick={() => handlePresetSelect(3, 'custom')}
+                                            className={`px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors border text-left flex flex-col justify-center ${comparePeriod3?.type === 'custom' ? 'bg-amber-600/20 border-amber-500' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 hover:border-amber-500/50'}`}
+                                        >
                                             <span className="block font-medium">Custom Range</span>
                                         </button>
+                                    </div>
+                                )}
+                                {showPeriod3 && comparePeriod3?.type === 'custom' && (
+                                    <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-amber-500/30">
+                                        <p className="text-xs font-bold text-amber-400 uppercase mb-2">Select Custom Range</p>
+                                        <GoogleDateRangePicker
+                                            startDate={comparePeriod3.start}
+                                            endDate={comparePeriod3.end}
+                                            onChange={(s, e) => handleCustomDateChange(3, s, e)}
+                                        />
                                     </div>
                                 )}
                             </div>

@@ -121,3 +121,29 @@ model SellerCentralBusinessReport {
   @@id([date, childAsin])
   @@map("seller_central_business_report")
 }
+
+model AsinMapping {
+  asin        String   @id @db.VarChar(50)
+  category    String?  @db.VarChar(100)
+  subCategory String?  @map("sub_category") @db.VarChar(100)
+  title       String?  @db.Text
+  shortTitle  String?  @map("short_title") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@map("asin_mapping")
+}
+
+model CampaignMapping {
+  id           Int      @id @default(autoincrement())
+  campaignName String   @map("campaign_name") @db.Text
+  asin         String?  @db.VarChar(50)
+  category     String?  @db.VarChar(100)
+  adType       String?  @map("ad_type") @db.VarChar(50)
+  intent       String?  @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@unique([campaignName, asin])
+  @@map("campaign_mapping")
+}

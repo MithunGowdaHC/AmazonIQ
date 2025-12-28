@@ -18,7 +18,8 @@ import {
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    ChevronDown
+    ChevronDown,
+    ChevronRight
 } from 'lucide-react';
 import {
     BarChart,
@@ -154,6 +155,21 @@ export const Dashboard: React.FC = () => {
     const [comparisonData, setComparisonData] = useState<{ period1?: any; period2?: any; period3?: any }>({});
     const [isComparing, setIsComparing] = useState(false);
 
+    // Hierarchical Table State
+    const [categories, setCategories] = useState<any[]>([]);
+    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+    const [subcategoriesByCategory, setSubcategoriesByCategory] = useState<Map<string, any[]>>(new Map());
+    const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+    const [asinsBySubcategory, setAsinsBySubcategory] = useState<Map<string, any[]>>(new Map());
+    const [asinsByCategory, setAsinsByCategory] = useState<Map<string, any[]>>(new Map()); // For category+ASIN mode
+    const [allSubcategories, setAllSubcategories] = useState<any[]>([]); // For flat subcategory view
+
+
+    // Hierarchy Level Toggles (all enabled by default for full hierarchy)
+    const [showCategories, setShowCategories] = useState(true);
+    const [showSubcategories, setShowSubcategories] = useState(true);
+    const [showAsins, setShowAsins] = useState(true);
+
     // Calculate comparison period dates
     const calculatePeriodDates = (type: string): { start: string; end: string } => {
         const start = new Date(startDate);
@@ -256,13 +272,22 @@ export const Dashboard: React.FC = () => {
             if (selectedAccount.id !== 'Stahl') {
                 setLoading(false);
                 setData([]);
+                setCategories([]);
                 return;
             }
 
             setLoading(true);
-            getAsinSummaries(selectedAccount.id, { startDate, endDate })
-                .then(res => {
-                    setData(res);
+
+            // Fetch ASINs (for KPIs), Categories, and All Subcategories
+            Promise.all([
+                getAsinSummaries(selectedAccount.id, { startDate, endDate }),
+                fetch(`/api/dashboard/category-summaries?startDate=${startDate}&endDate=${endDate}`).then(r => r.json()),
+                fetch(`/api/dashboard/all-subcategories?startDate=${startDate}&endDate=${endDate}`).then(r => r.json())
+            ])
+                .then(([asinData, categoryData, allSubcategoryData]) => {
+                    setData(asinData); // Keep for top KPIs and ASIN-only view
+                    setCategories(categoryData); // For hierarchical table
+                    setAllSubcategories(allSubcategoryData); // For flat subcategory view
                     setLoading(false);
                 })
                 .catch(err => {
@@ -275,6 +300,68 @@ export const Dashboard: React.FC = () => {
     const handleDateChange = (start: string, end: string) => {
         setStartDate(start);
         setEndDate(end);
+    };
+
+    // Handle category expansion - fetch subcategories or ASINs based on view mode
+    const toggleCategory = async (category: string) => {
+        const newExpanded = new Set(expandedCategories);
+        if (expandedCategories.has(category)) {
+            newExpanded.delete(category);
+            setExpandedCategories(newExpanded);
+        } else {
+            newExpanded.add(category);
+            setExpandedCategories(newExpanded);
+
+            // If subcategories are shown, fetch them
+            if (showSubcategories && !subcategoriesByCategory.has(category)) {
+                try {
+                    const response = await fetch(`/api/dashboard/subcategory-summaries?category=${encodeURIComponent(category)}&startDate=${startDate}&endDate=${endDate}`);
+                    const subcategories = await response.json();
+                    setSubcategoriesByCategory(new Map(subcategoriesByCategory).set(category, subcategories));
+                } catch (error) {
+                    console.error('Error fetching subcategories:', error);
+                }
+            }
+
+            // If subcategories are hidden but ASINs are shown, fetch ASINs directly for the category
+            if (!showSubcategories && showAsins && !asinsByCategory.has(category)) {
+                try {
+                    // Fetch all ASINs in this category
+                    const asinsInCategory = data.filter(asin => {
+                        // This is a simplified approach - in production you'd fetch from an API
+                        // For now, we'll use the asin-summaries with category filter
+                        return true; // Placeholder - will be refined
+                    });
+                    setAsinsByCategory(new Map(asinsByCategory).set(category, asinsInCategory));
+                } catch (error) {
+                    console.error('Error fetching ASINs for category:', error);
+                }
+            }
+        }
+    };
+
+    // Handle subcategory expansion - fetch ASINs
+    const toggleSubcategory = async (category: string, subcategory: string) => {
+        const key = `${category}|${subcategory}`;
+        const newExpanded = new Set(expandedSubcategories);
+        if (expandedSubcategories.has(key)) {
+            newExpanded.delete(key);
+            setExpandedSubcategories(newExpanded);
+        } else {
+            newExpanded.add(key);
+            setExpandedSubcategories(newExpanded);
+
+            // Fetch ASINs if not already loaded
+            if (!asinsBySubcategory.has(key)) {
+                try {
+                    const response = await fetch(`/api/dashboard/asins-by-subcategory?category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subcategory)}&startDate=${startDate}&endDate=${endDate}`);
+                    const asins = await response.json();
+                    setAsinsBySubcategory(new Map(asinsBySubcategory).set(key, asins));
+                } catch (error) {
+                    console.error('Error fetching ASINs:', error);
+                }
+            }
+        }
     };
 
     // Sorting Logic
@@ -317,6 +404,39 @@ export const Dashboard: React.FC = () => {
         if (rowsLimit === 'All') return result;
         return result.slice(0, parseInt(rowsLimit));
     }, [data, sortConfig, rowsLimit]);
+
+    // Sorted Categories (for hierarchical table)
+    const sortedCategories = useMemo(() => {
+        if (categories.length === 0) return [];
+
+        const sorted = [...categories];
+        sorted.sort((a, b) => {
+            let aValue: number | string = 0;
+            let bValue: number | string = 0;
+
+            // Category sorting (simplified - no CVR at category level)
+            if (sortConfig.key === 'category' || sortConfig.key === 'itemName') {
+                aValue = a.category || '';
+                bValue = b.category || '';
+            } else {
+                // @ts-ignore
+                aValue = a[sortConfig.key] || 0;
+                // @ts-ignore
+                bValue = b[sortConfig.key] || 0;
+            }
+
+            if (typeof aValue === 'string') {
+                aValue = aValue.toLowerCase();
+                bValue = (bValue as string).toLowerCase();
+            }
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return sorted;
+    }, [categories, sortConfig]);
 
     // CSV Export
     const exportCSV = () => {
@@ -704,6 +824,38 @@ export const Dashboard: React.FC = () => {
                         subtitle="ASIN Level Breakdown"
                         action={
                             <div className="flex items-center gap-3">
+                                {/* Hierarchy Level Toggles */}
+                                <div className="flex items-center gap-3 px-3 py-1.5 bg-indigo-600/5 rounded-lg border border-indigo-500/20">
+                                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">View:</span>
+                                    <label className="flex items-center gap-1.5 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={showCategories}
+                                            onChange={(e) => setShowCategories(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded border-indigo-500/30 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
+                                        />
+                                        <span className="text-xs text-slate-300 group-hover:text-indigo-400 transition-colors">Categories</span>
+                                    </label>
+                                    <label className="flex items-center gap-1.5 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={showSubcategories}
+                                            onChange={(e) => setShowSubcategories(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded border-indigo-500/30 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                                        />
+                                        <span className="text-xs text-slate-300 group-hover:text-emerald-400 transition-colors">Subcategories</span>
+                                    </label>
+                                    <label className="flex items-center gap-1.5 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={showAsins}
+                                            onChange={(e) => setShowAsins(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded border-indigo-500/30 text-slate-500 focus:ring-slate-500 focus:ring-offset-0 cursor-pointer"
+                                        />
+                                        <span className="text-xs text-slate-300 group-hover:text-slate-400 transition-colors">ASINs</span>
+                                    </label>
+                                </div>
+                                {/* Rows Limit */}
                                 <div className="relative hidden sm:block">
                                     <select
                                         value={rowsLimit}
@@ -749,7 +901,8 @@ export const Dashboard: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/50">
-                                    {sortedData.map((row) => {
+                                    {/* Flat ASIN List (when only ASINs are shown) */}
+                                    {!showCategories && !showSubcategories && showAsins && sortedData.map((row) => {
                                         const cvr = row.clicks > 0 ? (row.paidOrders / row.clicks) * 100 : 0;
                                         const paidShare = row.glanceViews > 0 ? (row.paidGlanceViews / row.glanceViews) * 100 : 0;
                                         const orgShare = row.glanceViews > 0 ? (row.organicGlanceViews / row.glanceViews) * 100 : 0;
@@ -788,11 +941,317 @@ export const Dashboard: React.FC = () => {
                                                     <div>{row.organicGlanceViews?.toLocaleString() || 0}</div>
                                                     <div className="text-[10px] text-slate-600 font-mono">({orgShare.toFixed(0)}%)</div>
                                                 </td>
-                                                {/* Seller Central Data */}
                                                 <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{(row.scSales || 0).toLocaleString()}</td>
                                                 <td className="px-4 py-3.5 text-right text-amber-400">{(row.scOrders || 0).toLocaleString()}</td>
                                                 <td className="px-4 py-3.5 text-right text-amber-400">{(row.refundRate || 0).toFixed(1)}%</td>
                                             </tr>
+                                        );
+                                    })}
+
+
+                                    {/* Flat Subcategory List (when subcategories shown without categories) */}
+                                    {!showCategories && showSubcategories && allSubcategories.map((subcategory) => {
+                                        const subKey = `${subcategory.category}|${subcategory.subcategory}`;
+                                        const isExpanded = expandedSubcategories.has(subKey);
+                                        const asins = asinsBySubcategory.get(subKey) || [];
+
+                                        return (
+                                            <React.Fragment key={subKey}>
+                                                {/* Subcategory Row */}
+                                                <tr className="hover:bg-slate-800/30 transition-colors group text-xs">
+                                                    <td className="px-6 py-3.5">
+                                                        {showAsins ? (
+                                                            <button
+                                                                onClick={() => toggleSubcategory(subcategory.category, subcategory.subcategory)}
+                                                                className="flex items-center gap-2 text-left w-full"
+                                                            >
+                                                                <div className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+                                                                    <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold text-emerald-400 truncate max-w-[200px]">{subcategory.subcategory}</span>
+                                                                    <span className="text-[9px] text-slate-600 mt-0.5">{subcategory.category} • {subcategory.asinCount} ASINs</span>
+                                                                </div>
+                                                            </button>
+                                                        ) : (
+                                                            <div className="flex flex-col">
+                                                                <span className="font-semibold text-emerald-400 truncate max-w-[200px]">{subcategory.subcategory}</span>
+                                                                <span className="text-[9px] text-slate-600 mt-0.5">{subcategory.category} • {subcategory.asinCount} ASINs</span>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3.5 text-center">
+                                                        <Link
+                                                            href={`/analytics/subcategory/${subcategory.category}/${subcategory.subcategory}`}
+                                                            className="flex items-center justify-center gap-1 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600 hover:text-white text-emerald-400 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all w-full"
+                                                        >
+                                                            Analyze
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    </td>
+                                                    <td className="px-4 py-3.5 text-right font-medium text-slate-300">₹{subcategory.spend?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-slate-400">₹{subcategory.paidSales?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{subcategory.paidOrders || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{subcategory.impressions?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{subcategory.clicks?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{subcategory.roas?.toFixed(1) || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-emerald-500">-</td>
+                                                    <td className="px-4 py-3.5 text-right font-bold text-indigo-400">₹{subcategory.overallSales?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right font-medium text-slate-300">{subcategory.glanceViews?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-slate-500">-</td>
+                                                    <td className="px-4 py-3.5 text-right text-slate-500">-</td>
+                                                    <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{subcategory.scSales?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-amber-400">{subcategory.scOrders?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-amber-400">{subcategory.refundRate?.toFixed(1) || 0}%</td>
+                                                </tr>
+
+                                                {/* ASINs under subcategory (when expanded and ASINs enabled) */}
+                                                {isExpanded && showAsins && asins.map((asin) => {
+                                                    const cvr = asin.clicks > 0 ? (asin.paidOrders / asin.clicks) * 100 : 0;
+                                                    const paidShare = asin.glanceViews > 0 ? ((asin.paidGlanceViews || 0) / asin.glanceViews) * 100 : 0;
+                                                    const orgShare = asin.glanceViews > 0 ? ((asin.organicGlanceViews || 0) / asin.glanceViews) * 100 : 0;
+
+                                                    return (
+                                                        <tr key={asin.asin} className="hover:bg-slate-800/30 transition-colors group text-xs">
+                                                            <td className="px-6 py-3.5 pl-16">
+                                                                <Link href={`/analytics/${asin.asin}`} className="flex flex-col group-hover:text-indigo-400 transition-colors">
+                                                                    <span className="font-medium text-slate-300 truncate max-w-[180px]" title={asin.title}>{asin.title || asin.asin}</span>
+                                                                    <span className="text-[9px] text-slate-600 font-mono mt-0.5">{asin.asin}</span>
+                                                                </Link>
+                                                            </td>
+                                                            <td className="px-4 py-3.5 text-center">
+                                                                <Link
+                                                                    href={`/analytics/${asin.asin}`}
+                                                                    className="flex items-center justify-center gap-1 px-2 py-1 bg-slate-700/30 hover:bg-indigo-600 hover:text-white text-slate-400 rounded text-[9px] font-bold uppercase tracking-wide transition-all"
+                                                                >
+                                                                    Analyze
+                                                                    <ArrowRight className="w-2.5 h-2.5" />
+                                                                </Link>
+                                                            </td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-400">₹{Math.round(asin.spend || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-500">₹{Math.round(asin.paidSales || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-500">{asin.paidOrders || 0}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-500">{Math.round(asin.impressions || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-500">{Math.round(asin.clicks || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-500">{asin.roas?.toFixed(1) || 0}</td>
+                                                            <td className="px-4 py-3.5 text-right text-emerald-500">{cvr.toFixed(2)}%</td>
+                                                            <td className="px-4 py-3.5 text-right text-indigo-300">₹{Math.round(asin.overallSales || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-400">{asin.glanceViews?.toLocaleString() || 0}</td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-600">
+                                                                <div>{(asin.paidGlanceViews || 0).toLocaleString()}</div>
+                                                                <div className="text-[9px] text-slate-700 font-mono">({paidShare.toFixed(0)}%)</div>
+                                                            </td>
+                                                            <td className="px-4 py-3.5 text-right text-slate-600">
+                                                                <div>{(asin.organicGlanceViews || 0).toLocaleString()}</div>
+                                                                <div className="text-[9px] text-slate-700 font-mono">({orgShare.toFixed(0)}%)</div>
+                                                            </td>
+                                                            <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{(asin.scSales || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-amber-400">{(asin.scOrders || 0).toLocaleString()}</td>
+                                                            <td className="px-4 py-3.5 text-right text-amber-400">{(asin.refundRate || 0).toFixed(1)}%</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        );
+                                    })}
+
+                                    {/* Hierarchical Mode (when categories are enabled) */}
+                                    {showCategories && sortedCategories.map((category) => {
+                                        const isExpanded = expandedCategories.has(category.category);
+                                        const subcategories = subcategoriesByCategory.get(category.category) || [];
+
+                                        return (
+                                            <React.Fragment key={category.category}>
+                                                {/* Category Row */}
+                                                <tr className="hover:bg-slate-800/30 transition-colors group text-xs bg-slate-900/30">
+                                                    <td className="px-6 py-3.5">
+                                                        <button
+                                                            onClick={() => toggleCategory(category.category)}
+                                                            className="flex items-center gap-2 text-left w-full"
+                                                        >
+                                                            <div className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+                                                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-indigo-400 truncate max-w-[200px]">{category.category}</span>
+                                                                <span className="text-[10px] text-slate-500 mt-0.5">{category.asinCount} ASINs</span>
+                                                            </div>
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-4 py-3.5 text-center">
+                                                        <Link
+                                                            href={`/analytics/category/${category.category}`}
+                                                            className="flex items-center justify-center gap-1 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600 hover:text-white text-indigo-400 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all w-full"
+                                                        >
+                                                            Analyze
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    </td>
+                                                    <td className="px-4 py-3.5 text-right font-medium text-slate-300">₹{category.spend?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-slate-400">₹{category.paidSales?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{category.paidOrders || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{category.impressions?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{category.clicks?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right">{category.roas?.toFixed(1) || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-emerald-500">-</td>
+                                                    <td className="px-4 py-3.5 text-right font-bold text-indigo-400">₹{category.overallSales?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right font-medium text-slate-300">{category.glanceViews?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-slate-500">-</td>
+                                                    <td className="px-4 py-3.5 text-right text-slate-500">-</td>
+                                                    <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{category.scSales?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-amber-400">{category.scOrders?.toLocaleString() || 0}</td>
+                                                    <td className="px-4 py-3.5 text-right text-amber-400">{category.refundRate?.toFixed(1) || 0}%</td>
+                                                </tr>
+
+                                                {/* Subcategory Rows (when category is expanded) */}
+                                                {isExpanded && showSubcategories && subcategories.map((subcategory) => {
+                                                    const subKey = `${category.category}|${subcategory.subcategory}`;
+                                                    const isSubExpanded = expandedSubcategories.has(subKey);
+                                                    const asins = asinsBySubcategory.get(subKey) || [];
+
+                                                    return (
+                                                        <React.Fragment key={subKey}>
+                                                            {/* Subcategory Row */}
+                                                            <tr className="hover:bg-slate-800/20 transition-colors group text-xs bg-slate-800/10">
+                                                                <td className="px-6 py-3.5 pl-12">
+                                                                    <button
+                                                                        onClick={() => toggleSubcategory(category.category, subcategory.subcategory)}
+                                                                        className="flex items-center gap-2 text-left w-full"
+                                                                    >
+                                                                        <div className={`transition-transform ${isSubExpanded ? 'rotate-90' : ''}`}>
+                                                                            <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-semibold text-emerald-400 truncate max-w-[180px]">{subcategory.subcategory}</span>
+                                                                            <span className="text-[9px] text-slate-600 mt-0.5">{subcategory.asinCount} ASINs</span>
+                                                                        </div>
+                                                                    </button>
+                                                                </td>
+                                                                <td className="px-4 py-3.5 text-center">
+                                                                    <Link
+                                                                        href={`/analytics/subcategory/${category.category}/${subcategory.subcategory}`}
+                                                                        className="flex items-center justify-center gap-1 px-2 py-1 bg-emerald-600/10 hover:bg-emerald-600 hover:text-white text-emerald-400 rounded text-[9px] font-bold uppercase tracking-wide transition-all"
+                                                                    >
+                                                                        Analyze
+                                                                        <ArrowRight className="w-2.5 h-2.5" />
+                                                                    </Link>
+                                                                </td>
+                                                                <td className="px-4 py-3.5 text-right font-medium text-slate-400">₹{subcategory.spend?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-500">₹{subcategory.paidSales?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right">{subcategory.paidOrders || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right">{subcategory.impressions?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right">{subcategory.clicks?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right">{subcategory.roas?.toFixed(1) || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-emerald-500">-</td>
+                                                                <td className="px-4 py-3.5 text-right font-semibold text-indigo-300">₹{subcategory.overallSales?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right font-medium text-slate-400">{subcategory.glanceViews?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-600">-</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-600">-</td>
+                                                                <td className="px-4 py-3.5 text-right text-amber-300 border-l border-slate-800">₹{subcategory.scSales?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-amber-300">{subcategory.scOrders?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-amber-300">{subcategory.refundRate?.toFixed(1) || 0}%</td>
+                                                            </tr>
+
+                                                            {/* ASIN Rows (when subcategory is expanded) */}
+                                                            {isSubExpanded && showAsins && asins.map((asin) => {
+                                                                const cvr = asin.clicks > 0 ? (asin.paidOrders / asin.clicks) * 100 : 0;
+                                                                const paidShare = asin.glanceViews > 0 ? ((asin.paidGlanceViews || 0) / asin.glanceViews) * 100 : 0;
+                                                                const orgShare = asin.glanceViews > 0 ? ((asin.organicGlanceViews || 0) / asin.glanceViews) * 100 : 0;
+
+                                                                return (
+                                                                    <tr key={asin.asin} className="hover:bg-slate-800/30 transition-colors group text-xs">
+                                                                        <td className="px-6 py-3.5 pl-20">
+                                                                            <Link href={`/analytics/${asin.asin}`} className="flex flex-col group-hover:text-indigo-400 transition-colors">
+                                                                                <span className="font-medium text-slate-300 truncate max-w-[160px]" title={asin.title}>{asin.title || asin.asin}</span>
+                                                                                <span className="text-[9px] text-slate-600 font-mono mt-0.5">{asin.asin}</span>
+                                                                            </Link>
+                                                                        </td>
+                                                                        <td className="px-4 py-3.5 text-center">
+                                                                            <Link
+                                                                                href={`/analytics/${asin.asin}`}
+                                                                                className="flex items-center justify-center gap-1 px-2 py-1 bg-slate-700/30 hover:bg-indigo-600 hover:text-white text-slate-400 rounded text-[9px] font-bold uppercase tracking-wide transition-all"
+                                                                            >
+                                                                                Analyze
+                                                                                <ArrowRight className="w-2.5 h-2.5" />
+                                                                            </Link>
+                                                                        </td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-400">₹{Math.round(asin.spend || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-500">₹{Math.round(asin.paidSales || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-500">{asin.paidOrders || 0}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-500">{Math.round(asin.impressions || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-500">{Math.round(asin.clicks || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-500">{asin.roas?.toFixed(1) || 0}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-emerald-500">{cvr.toFixed(2)}%</td>
+                                                                        <td className="px-4 py-3.5 text-right text-indigo-300">₹{Math.round(asin.overallSales || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-400">{asin.glanceViews?.toLocaleString() || 0}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-600">
+                                                                            <div>{(asin.paidGlanceViews || 0).toLocaleString()}</div>
+                                                                            <div className="text-[9px] text-slate-700 font-mono">({paidShare.toFixed(0)}%)</div>
+                                                                        </td>
+                                                                        <td className="px-4 py-3.5 text-right text-slate-600">
+                                                                            <div>{(asin.organicGlanceViews || 0).toLocaleString()}</div>
+                                                                            <div className="text-[9px] text-slate-700 font-mono">({orgShare.toFixed(0)}%)</div>
+                                                                        </td>
+                                                                        <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{(asin.scSales || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-amber-400">{(asin.scOrders || 0).toLocaleString()}</td>
+                                                                        <td className="px-4 py-3.5 text-right text-amber-400">{(asin.refundRate || 0).toFixed(1)}%</td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </React.Fragment>
+                                                    );
+                                                })}\
+
+                                                {/* ASINs directly under category (when subcategories are hidden) */}
+                                                {isExpanded && !showSubcategories && showAsins && (() => {
+                                                    const categoryAsins = asinsByCategory.get(category.category) || [];
+                                                    return categoryAsins.map((asin) => {
+                                                        const cvr = asin.clicks > 0 ? (asin.paidOrders / asin.clicks) * 100 : 0;
+                                                        const paidShare = asin.glanceViews > 0 ? ((asin.paidGlanceViews || 0) / asin.glanceViews) * 100 : 0;
+                                                        const orgShare = asin.glanceViews > 0 ? ((asin.organicGlanceViews || 0) / asin.glanceViews) * 100 : 0;
+
+                                                        return (
+                                                            <tr key={asin.asin} className="hover:bg-slate-800/30 transition-colors group text-xs">
+                                                                <td className="px-6 py-3.5 pl-12">
+                                                                    <Link href={`/analytics/${asin.asin}`} className="flex flex-col group-hover:text-indigo-400 transition-colors">
+                                                                        <span className="font-medium text-slate-300 truncate max-w-[180px]" title={asin.itemName}>{asin.itemName || asin.asin}</span>
+                                                                        <span className="text-[9px] text-slate-600 font-mono mt-0.5">{asin.asin}</span>
+                                                                    </Link>
+                                                                </td>
+                                                                <td className="px-4 py-3.5 text-center">
+                                                                    <Link
+                                                                        href={`/analytics/${asin.asin}`}
+                                                                        className="flex items-center justify-center gap-1 px-2 py-1 bg-slate-700/30 hover:bg-indigo-600 hover:text-white text-slate-400 rounded text-[9px] font-bold uppercase tracking-wide transition-all"
+                                                                    >
+                                                                        Analyze
+                                                                        <ArrowRight className="w-2.5 h-2.5" />
+                                                                    </Link>
+                                                                </td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-400">₹{Math.round(asin.spend || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-500">₹{Math.round(asin.paidSales || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-500">{asin.totalOrders || asin.paidOrders || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-500">{Math.round(asin.impressions || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-500">{Math.round(asin.clicks || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-500">{asin.roas?.toFixed(1) || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-emerald-500">{cvr.toFixed(2)}%</td>
+                                                                <td className="px-4 py-3.5 text-right text-indigo-300">₹{Math.round(asin.overallSales || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-400">{asin.glanceViews?.toLocaleString() || 0}</td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-600">
+                                                                    <div>{(asin.paidGlanceViews || 0).toLocaleString()}</div>
+                                                                    <div className="text-[9px] text-slate-700 font-mono">({paidShare.toFixed(0)}%)</div>
+                                                                </td>
+                                                                <td className="px-4 py-3.5 text-right text-slate-600">
+                                                                    <div>{(asin.organicGlanceViews || 0).toLocaleString()}</div>
+                                                                    <div className="text-[9px] text-slate-700 font-mono">({orgShare.toFixed(0)}%)</div>
+                                                                </td>
+                                                                <td className="px-4 py-3.5 text-right text-amber-400 border-l border-slate-800">₹{(asin.scSales || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-amber-400">{(asin.scOrders || 0).toLocaleString()}</td>
+                                                                <td className="px-4 py-3.5 text-right text-amber-400">{(asin.refundRate || 0).toFixed(1)}%</td>
+                                                            </tr>
+                                                        );
+                                                    });
+                                                })()}
+                                            </React.Fragment>
                                         );
                                     })}
                                 </tbody>

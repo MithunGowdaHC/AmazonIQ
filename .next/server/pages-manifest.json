@@ -2,9 +2,11 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/dashboard": "pages/dashboard.js",
-  "/analytics/[asin]": "pages/analytics/[asin].js",
   "/analytics": "pages/analytics.js",
-  "/api/asin/daily-performance": "pages/api/asin/daily-performance.js",
+  "/analytics/[asin]": "pages/analytics/[asin].js",
+  "/dashboard": "pages/dashboard.js",
+  "/api/dashboard/asins-by-subcategory": "pages/api/dashboard/asins-by-subcategory.js",
+  "/api/dashboard/all-subcategories": "pages/api/dashboard/all-subcategories.js",
+  "/api/dashboard/category-summaries": "pages/api/dashboard/category-summaries.js",
   "/api/dashboard/asin-summaries": "pages/api/dashboard/asin-summaries.js"
 }
